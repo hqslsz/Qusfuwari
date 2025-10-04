@@ -1,0 +1,167 @@
+---
+// src/components/PdfPreview.astro
+// 定义组件可以接收的属性
+export interface Props {
+  pdfUrl: string;
+}
+const { pdfUrl } = Astro.props;
+---
+
+<!--
+  组件的 HTML 结构。
+  使用 class 代替 id 以便组件可以被多次复用。
+  通过 data-url 属性将 PDF 的路径传递给客户端脚本。
+-->
+<div class="pdf-scroll-container" data-url={pdfUrl}>
+  <div class="pdf-viewer"></div>
+  <div class="pdf-controls">
+    <a href={pdfUrl} download class="download-button" aria-label="下载 PDF">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="icon-download"
+      >
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="7 10 12 15 17 10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+      </svg>
+      <span>下载 PDF</span>
+    </a>
+  </div>
+</div>
+
+<style>
+  :root {
+    --btn-bg: #007bff;
+    --btn-text-color: #ffffff;
+    --btn-bg-hover: #0056b3;
+  }
+
+  .pdf-scroll-container {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .pdf-viewer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+  }
+
+  .pdf-viewer :global(canvas) {
+    max-width: 100%;
+    height: auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid #eee;
+  }
+
+  .pdf-controls {
+    margin-top: 1.5rem;
+    text-align: center;
+  }
+
+  .download-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background-color: var(--btn-bg);
+    color: var(--btn-text-color);
+    padding: 0.75rem 1.5rem;
+    border-radius: 50px;
+    border: none;
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+      background-color 0.2s ease-in-out,
+      transform 0.1s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+
+  .download-button:hover {
+    background-color: var(--btn-bg-hover);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .download-button:active {
+    transform: scale(0.98);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+
+  .download-button .icon-download {
+    width: 1.2em;
+    height: 1.2em;
+  }
+</style>
+
+<script type="module">
+  import * as pdfjsLib from "https://mozilla.github.io/pdf.js/build/pdf.mjs";
+
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://mozilla.github.io/pdf.js/build/pdf.worker.mjs`;
+
+  /**
+   * 渲染单个 PDF 组件实例。
+   * @param {HTMLElement} container - 组件的顶层容器元素。
+   */
+  async function renderPdfInstance(container) {
+    const viewer = container.querySelector(".pdf-viewer");
+    if (!viewer) return;
+
+    if (container.dataset.initialized === "true") return;
+    container.dataset.initialized = "true";
+
+    viewer.innerHTML = "";
+    const url = container.dataset.url;
+
+    try {
+      // 获取容器的实际宽度以实现响应式渲染
+      const containerWidth = viewer.clientWidth;
+      if (containerWidth === 0) {
+        console.warn("PDF viewer container has no width, PDF might not render correctly.");
+        return;
+      }
+      const pdfDoc = await pdfjsLib.getDocument(url).promise;
+      // 并发渲染所有页面
+      const renderTasks = [];
+      for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+        renderTasks.push(
+          (async () => {
+            const page = await pdfDoc.getPage(pageNum);
+            const viewportUnscaled = page.getViewport({ scale: 1 });
+            const scale = containerWidth / viewportUnscaled.width;
+            const viewport = page.getViewport({ scale: scale });
+
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            viewer.appendChild(canvas);
+
+            await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+          })(),
+        );
+      }
+      await Promise.all(renderTasks);
+    } catch (error) {
+      console.error(`渲染 PDF (${url}) 时出错:`, error);
+      viewer.innerHTML = `<p style="color: red;">加载 PDF 失败: ${error.message}</p>`;
+    }
+  }
+  function initializeAllPdfViewers() {
+    const containers = document.querySelectorAll(".pdf-scroll-container");
+    containers.forEach(renderPdfInstance);
+  }
+  document.addEventListener("astro:page-load", initializeAllPdfViewers);
+  initializeAllPdfViewers();
+</script>
