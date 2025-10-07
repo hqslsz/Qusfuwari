@@ -55,7 +55,7 @@ export const navBarConfig: NavBarConfig = {
 export const profileConfig: ProfileConfig = {
 	avatar: "assets/images/kdl.jpg", // 相对于 /src 目录的路径。如果以 '/' 开头则相对于 /public 目录
 	name: "Quasi2317",
-	bio: "不自甘堕落的小同学，喜欢折腾新事物(雾)",
+	bio: "喜欢折腾新事物的小同学(雾)",
 	links: [
 		{
 			name: "Twitter",
