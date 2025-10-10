@@ -30,6 +30,7 @@ export type SiteConfig = {
 			url?: string;
 		};
 	};
+	background: BackgroundConfig;
 	toc: {
 		enable: boolean;
 		depth: 1 | 2 | 3;
@@ -100,3 +101,13 @@ export type BlogPostData = {
 export type ExpressiveCodeConfig = {
 	theme: string;
 };
+
+export interface BackgroundConfig {
+	enable: boolean;
+	src: string;
+	position: "top" | "center" | "bottom";
+	size: "cover" | "contain" | "auto";
+	repeat: "no-repeat" | "repeat" | "repeat-x" | "repeat-y";
+	attachment: "fixed" | "scroll" | "local";
+	opacity: number;
+}

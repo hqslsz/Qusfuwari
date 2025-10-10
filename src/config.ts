@@ -13,7 +13,7 @@ export const siteConfig: SiteConfig = {
 	lang: "zh_CN", // 语言代码，例如 'en', 'zh_CN', 'ja' 等
 	themeColor: {
 		hue: 105, // 主题色的默认色相，范围 0 到 360。例如红色: 0，青色: 200，蓝色: 250，粉色: 345
-		fixed: true, // 隐藏访客的主题色选择器
+		fixed: false, // 隐藏访客的主题色选择器
 	},
 	banner: {
 		enable: false,
@@ -25,6 +25,17 @@ export const siteConfig: SiteConfig = {
 			url: "", // （可选）指向原始作品或艺术家页面的链接
 		},
 	},
+
+	background: {
+		enable: true, // 是否启用背景图
+		src: "/../src/assets/images/bj.jpg", // 背景图URL（可以是相对路径或绝对URL）
+		position: "center", // 背景位置: 'top', 'center', 'bottom'
+		size: "cover", // 背景大小: 'cover', 'contain', 'auto'
+		repeat: "no-repeat", // 背景重复: 'no-repeat', 'repeat'
+		attachment: "scroll", // 背景附着: 'fixed', 'scroll'
+		opacity: 0.5, // 背景不透明度 (0-1)
+	},
+
 	toc: {
 		enable: true, // 在文章右侧显示目录
 		depth: 3, // 目录显示的最大标题层级，范围 1 到 3
