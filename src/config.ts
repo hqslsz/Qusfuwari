@@ -28,7 +28,7 @@ export const siteConfig: SiteConfig = {
 
 	background: {
 		enable: true, // 是否启用背景图
-		src: "/../src/assets/images/bj.jpg", // 背景图URL（可以是相对路径或绝对URL）
+		src: "/bj.jpg", // 背景图URL（可以是相对路径或绝对URL）
 		position: "center", // 背景位置: 'top', 'center', 'bottom'
 		size: "cover", // 背景大小: 'cover', 'contain', 'auto'
 		repeat: "no-repeat", // 背景重复: 'no-repeat', 'repeat'
