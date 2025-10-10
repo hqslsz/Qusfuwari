@@ -155,7 +155,19 @@ const bannerOffset =
 						// Keep cards opaque if background image fails to load
 						console.warn('Background image failed to load, keeping cards opaque');
 					};
+					// 移动端兼容性：添加crossOrigin属性
+					img.crossOrigin = 'anonymous';
 					img.src = urlMatch[1];
+					
+					// 移动端备用方案：如果图片加载超时，直接启用透明效果
+					setTimeout(() => {
+						if (!document.body.classList.contains('bg-loaded')) {
+							console.log('Background image load timeout, enabling transparency anyway');
+							document.body.classList.add('bg-loaded');
+							document.documentElement.style.setProperty('--card-bg', 'var(--card-bg-transparent)');
+							document.documentElement.style.setProperty('--float-panel-bg', 'var(--float-panel-bg-transparent)');
+						}
+					}, 3000);
 				}
 			}
 		</script>
@@ -208,6 +220,34 @@ const bannerOffset =
 				z-index: -1 !important;
 				display: block !important;
 				transition: opacity 0.3s ease-in-out !important;
+			}
+			
+			/* 移动端兼容性修复 - 使用fixed但优化性能 */
+			@media (max-width: 768px) {
+				body::before {
+					position: fixed !important;
+					height: 100vh !important;
+					min-height: 100vh !important;
+					background-attachment: fixed !important;
+					/* 优化移动端性能 */
+					transform: translateZ(0);
+					-webkit-transform: translateZ(0);
+					will-change: transform;
+				}
+			}
+			
+			/* iOS Safari 特殊处理 - 强制使用fixed */
+			@supports (-webkit-touch-callout: none) {
+				body::before {
+					position: fixed !important;
+					height: 100vh !important;
+					min-height: 100vh !important;
+					background-attachment: fixed !important;
+					/* iOS Safari 优化 */
+					-webkit-backface-visibility: hidden;
+					backface-visibility: hidden;
+					transform: translate3d(0, 0, 0);
+				}
 			}
 			
 			body.bg-loaded::before {
