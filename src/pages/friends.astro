@@ -1,0 +1,33 @@
+---
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+import { friends } from "../config";
+import I18nKey from "../i18n/i18nKey";
+import { i18n } from "../i18n/translation";
+---
+<MainGridLayout title={i18n(I18nKey.friends)} description={i18n(I18nKey.friends)}>
+    <div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative min-h-32">
+        <div class="card-base z-10 px-9 py-6 relative w-full ">
+            <div class="mb-6">
+                <h1 class="text-2xl font-bold flex items-center gap-2">
+                    <span>🥂</span>
+                    <span>dalao们</span>
+                </h1>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {friends.map((f) => (
+                    <a href={f.url} target="_blank" rel="noopener" class="card-base p-4 flex items-center gap-4 hover:scale-[1.01] transition">
+                        {f.avatar && <img src={f.avatar} alt={f.name} class="w-12 h-12 rounded-full object-cover" />}
+                        <div class="flex-1">
+                            <div class="font-bold">{f.name}</div>
+                            {f.bio && <div class="text-sm opacity-70 mt-1">{f.bio}</div>}
+                        </div>
+                    </a>
+                ))}
+            </div>
+        </div>
+    </div>
+</MainGridLayout>
+
+
+
+
