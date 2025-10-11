@@ -1,9 +1,6 @@
 export const PAGE_SIZE = 8;
 
-export const LIGHT_MODE = "light",
-	DARK_MODE = "dark",
-	AUTO_MODE = "auto";
-export const DEFAULT_THEME = LIGHT_MODE;
+// 主题相关常量已删除，仅保留白天模式
 
 // Banner height unit: vh
 export const BANNER_HEIGHT = 35;

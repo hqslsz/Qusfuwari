@@ -46,8 +46,8 @@ const { remarkPluginFrontmatter } = await entry.render();
     <div class:list={["pl-6 md:pl-9 pr-6 md:pr-2 pt-6 md:pt-7 pb-6 relative", {"w-full md:w-[calc(100%_-_52px_-_12px)]": !hasCover, "w-full md:w-[calc(100%_-_var(--coverWidth)_-_12px)]": hasCover}]}>
         <a href={url}
            class="transition group w-full block font-bold mb-3 text-3xl text-90
-        hover:text-[var(--primary)] dark:hover:text-[var(--primary)]
-        active:text-[var(--title-active)] dark:active:text-[var(--title-active)]
+        hover:text-[var(--primary)]
+        active:text-[var(--title-active)]
         before:w-1 before:h-5 before:rounded-md before:bg-[var(--primary)]
         before:absolute before:top-[35px] before:left-[18px] before:hidden md:before:block
         ">
@@ -65,7 +65,7 @@ const { remarkPluginFrontmatter } = await entry.render();
         </div>
 
         <!-- word count and read time  -->
-        <div class="text-sm text-black/30 dark:text-white/30 flex gap-4 transition">
+        <div class="text-sm text-black/30 flex gap-4 transition">
             <div>
                 {remarkPluginFrontmatter.words} {" " + i18n(remarkPluginFrontmatter.words === 1 ? I18nKey.wordCount : I18nKey.wordsCount)}
             </div>
@@ -104,7 +104,7 @@ const { remarkPluginFrontmatter } = await entry.render();
         </a>
     }
 </div>
-<div class="transition border-t-[1px] border-dashed mx-6 border-black/10 dark:border-white/[0.15] last:border-t-0 md:hidden"></div>
+<div class="transition border-t-[1px] border-dashed mx-6 border-black/10 last:border-t-0 md:hidden"></div>
 
 <style define:vars={{coverWidth}}>
 </style>

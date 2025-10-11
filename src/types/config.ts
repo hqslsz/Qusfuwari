@@ -1,4 +1,4 @@
-import type { AUTO_MODE, DARK_MODE, LIGHT_MODE } from "@constants/constants";
+// 主题相关类型已删除
 
 export type SiteConfig = {
 	title: string;
@@ -86,10 +86,7 @@ export type LicenseConfig = {
 	url: string;
 };
 
-export type LIGHT_DARK_MODE =
-	| typeof LIGHT_MODE
-	| typeof DARK_MODE
-	| typeof AUTO_MODE;
+// LIGHT_DARK_MODE 类型已删除
 
 export type BlogPostData = {
 	body: string;
