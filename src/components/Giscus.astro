@@ -14,7 +14,7 @@
     data-reactions-enabled="1"
     data-emit-metadata="0"
     data-input-position="top"
-    data-theme="preferred_color_scheme"
+    data-theme="transparent"
     data-lang="zh-CN"
     data-loading="lazy"
     crossorigin="anonymous"
@@ -23,72 +23,38 @@
 </div>
 
 <script>
-  // 获取当前主题
-  function getCurrentTheme() {
-    const htmlElement = document.documentElement;
-    // 检查是否有 dark 类
-    if (htmlElement.classList.contains('dark')) {
-      return 'dark';
-    }
-    // 检查 data-theme 属性
-    const dataTheme = htmlElement.getAttribute('data-theme');
-    if (dataTheme === 'dark') {
-      return 'dark';
-    }
-    return 'light';
-  }
+  // 确保只运行一次
+  let isInitialized = false;
 
-  // 更新 Giscus 主题
-  function updateGiscusTheme() {
-    const theme = getCurrentTheme();
-    const iframe = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
-    
-    if (iframe && iframe.contentWindow) {
-      iframe.contentWindow.postMessage(
-        {
-          giscus: {
-            setConfig: {
-              theme: theme
-            }
-          }
-        },
-        'https://giscus.app'
-      );
-    }
-  }
-
-  // 等待 iframe 加载完成后初始化主题
   function initGiscusTheme() {
+    if (isInitialized) return;
+    isInitialized = true;
+
     const checkIframe = setInterval(() => {
       const iframe = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
       if (iframe) {
         clearInterval(checkIframe);
         // 等待 iframe 完全加载
-        setTimeout(updateGiscusTheme, 500);
+        setTimeout(() => {
+          if (iframe && iframe.contentWindow) {
+            iframe.contentWindow.postMessage(
+              {
+                giscus: {
+                  setConfig: {
+                    theme: 'light'
+                  }
+                }
+              },
+              'https://giscus.app'
+            );
+          }
+        }, 500);
       }
     }, 100);
 
     // 10秒后停止检查
     setTimeout(() => clearInterval(checkIframe), 10000);
   }
-
-  // 监听 DOM 变化（监听 class 或 data-theme 属性变化）
-  const observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-      if (
-        mutation.type === 'attributes' &&
-        (mutation.attributeName === 'class' || mutation.attributeName === 'data-theme')
-      ) {
-        updateGiscusTheme();
-      }
-    });
-  });
-
-  // 开始观察
-  observer.observe(document.documentElement, {
-    attributes: true,
-    attributeFilter: ['class', 'data-theme']
-  });
 
   // 页面加载完成后初始化
   if (document.readyState === 'loading') {
@@ -103,9 +69,5 @@
     margin-top: 2rem;
     padding-top: 2rem;
     border-top: 1px solid var(--line-divider, #e5e7eb);
-  }
-  
-  :global(.dark) .giscus-container {
-    border-top-color: var(--line-divider-dark, #374151);
   }
 </style>
