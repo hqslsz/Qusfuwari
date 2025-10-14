@@ -84,7 +84,7 @@ const { pdfUrl } = Astro.props;
     align-items: center;
     justify-content: center;
     gap: 0.625rem;
-    background: rgb(125, 116, 0) !important;
+    background: oklch(0.65 0.15 var(--hue)) !important;
     color: #ffffff !important;
     padding: 0.875rem 2rem !important;
     border-radius: 12px !important;
@@ -94,7 +94,7 @@ const { pdfUrl } = Astro.props;
     text-decoration: none !important;
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 2px 8px rgba(125, 116, 0, 0.3) !important;
+    box-shadow: 0 2px 8px oklch(0.65 0.15 var(--hue) / 0.3) !important;
     position: relative;
   }
 
@@ -104,8 +104,8 @@ const { pdfUrl } = Astro.props;
 
   .download-button:hover {
     transform: translateY(-1px) !important;
-    box-shadow: 0 4px 12px rgba(125, 116, 0, 0.4) !important;
-    background: rgb(145, 136, 0) !important;
+    box-shadow: 0 4px 12px oklch(0.65 0.15 var(--hue) / 0.4) !important;
+    background: oklch(0.70 0.16 var(--hue)) !important;
   }
 
   .download-button:hover::before {
@@ -117,26 +117,26 @@ const { pdfUrl } = Astro.props;
   .pdf-controls a.download-button:link,
   .pdf-controls a.download-button:visited,
   .pdf-scroll-container a.download-button {
-    background: rgb(125, 116, 0) !important;
+    background: oklch(0.65 0.15 var(--hue)) !important;
     color: #ffffff !important;
   }
 
   .pdf-controls a.download-button:hover,
   .pdf-controls a.download-button:focus,
   .pdf-scroll-container a.download-button:hover {
-    background: rgb(145, 136, 0) !important;
+    background: oklch(0.70 0.16 var(--hue)) !important;
     color: #ffffff !important;
   }
 
   .pdf-controls a.download-button:active,
   .pdf-scroll-container a.download-button:active {
-    background: rgb(125, 116, 0) !important;
+    background: oklch(0.60 0.14 var(--hue)) !important;
     color: #ffffff !important;
   }
 
   .download-button:active {
     transform: translateY(0) !important;
-    box-shadow: 0 1px 4px rgba(125, 116, 0, 0.3) !important;
+    box-shadow: 0 1px 4px oklch(0.65 0.15 var(--hue) / 0.3) !important;
   }
 
   .download-button .icon-download {

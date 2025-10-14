@@ -1,0 +1,396 @@
+---
+interface ShowcaseItem {
+  title: string;
+  image: string;
+  description: string; // 悬停时显示的简短描述
+  details?: string; // 点击后模态窗口显示的详细描述
+}
+
+interface Props {
+  title?: string;
+  items: ShowcaseItem[];
+}
+
+const { title, items } = Astro.props;
+---
+
+<div class="showcase-container my-8">
+  {title && (
+    <h2 class="text-2xl md:text-3xl font-bold text-90 mb-6">{title}</h2>
+  )}
+  
+  <div class="showcase-grid grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
+    {items.map((item, index) => (
+      <div class="showcase-item overflow-hidden rounded-lg shadow-sm hover:shadow-lg transition-all duration-300">
+        <!-- 图片区域 - 完全铺满 -->
+        <div class="showcase-image-wrapper relative overflow-hidden cursor-pointer group bg-gray-100" data-showcase-index={index}>
+          <div class="w-full aspect-[4/3]">
+            <img 
+              src={item.image} 
+              alt={item.title}
+              class="w-full h-full object-cover block transition-transform duration-500 group-hover:scale-110"
+            />
+          </div>
+          
+          <!-- 悬停遮罩 - 显示简短描述 -->
+          <div class="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-6">
+            <p class="text-white text-center text-sm md:text-base leading-relaxed">
+              {item.description}
+            </p>
+          </div>
+        </div>
+        
+        <!-- 标题在图片下方 -->
+        <div class="bg-[var(--card-bg)] px-4 py-3">
+          <h3 class="text-base md:text-lg font-bold text-90 text-center line-clamp-2">
+            {item.title}
+          </h3>
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
+
+<!-- 模态窗口 - 覆盖整个页面 -->
+<div id="showcase-modal" class="showcase-modal hidden">
+  <div class="modal-backdrop" id="modal-backdrop"></div>
+  <div class="modal-wrapper">
+    <div class="modal-content">
+      <button class="modal-close" id="modal-close" aria-label="关闭">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+      
+      <!-- 模态窗口图片 -->
+      <div class="modal-image-container">
+        <img id="modal-image" src="" alt="" class="modal-image" />
+      </div>
+      
+      <!-- 模态窗口内容 -->
+      <div class="modal-body">
+        <h2 id="modal-title" class="modal-title"></h2>
+        <div id="modal-description" class="modal-description"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* 图片完全铺满 */
+  .showcase-image-wrapper {
+    display: block;
+    margin: 0;
+    padding: 0;
+    line-height: 0;
+  }
+  
+  .showcase-image-wrapper img {
+    user-select: none;
+    margin: 0;
+    padding: 0;
+    vertical-align: middle;
+  }
+  
+  /* 模态窗口 - 覆盖整个视口 */
+  .showcase-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .showcase-modal.hidden {
+    display: none;
+  }
+  
+  /* 背景遮罩 */
+  .modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(8px);
+    animation: fadeIn 0.2s ease-out;
+  }
+  
+  /* 模态窗口容器 */
+  .modal-wrapper {
+    position: relative;
+    z-index: 100000;
+    width: 100%;
+    max-width: 800px;
+    max-height: 90vh;
+    margin: 0 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: scaleIn 0.3s ease-out;
+  }
+  
+  /* 模态窗口内容 */
+  .modal-content {
+    position: relative;
+    width: 100%;
+    background: var(--card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* 关闭按钮 */
+  .modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 10;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    backdrop-filter: blur(4px);
+  }
+  
+  .modal-close:hover {
+    background: rgba(0, 0, 0, 0.9);
+    transform: scale(1.1);
+  }
+  
+  /* 模态窗口图片 */
+  .modal-image-container {
+    width: 100%;
+    max-height: 400px;
+    overflow: hidden;
+    background: #f0f0f0;
+    flex-shrink: 0;
+  }
+  
+  .modal-image {
+    width: 100%;
+    height: 100%;
+    max-height: 400px;
+    object-fit: cover;
+    display: block;
+  }
+  
+  /* 模态窗口文本内容 */
+  .modal-body {
+    padding: 2rem;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+  }
+  
+  .modal-title {
+    font-size: 1.75rem;
+    font-weight: bold;
+    color: var(--text-90);
+    margin-bottom: 1rem;
+    line-height: 1.3;
+  }
+  
+  .modal-description {
+    font-size: 1rem;
+    line-height: 1.8;
+    color: var(--text-75);
+    white-space: pre-wrap;
+  }
+  
+  /* 动画 */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
+  /* 移动端优化 */
+  @media (max-width: 768px) {
+    .modal-wrapper {
+      max-width: calc(100% - 2rem);
+      margin: 0 1rem;
+    }
+    
+    .modal-content {
+      max-height: 85vh;
+    }
+    
+    .modal-image-container {
+      max-height: 250px;
+    }
+    
+    .modal-image {
+      max-height: 250px;
+    }
+    
+    .modal-body {
+      padding: 1.5rem;
+    }
+    
+    .modal-title {
+      font-size: 1.5rem;
+    }
+    
+    .modal-description {
+      font-size: 0.95rem;
+    }
+    
+    .modal-close {
+      width: 40px;
+      height: 40px;
+      top: 0.75rem;
+      right: 0.75rem;
+    }
+  }
+</style>
+
+<script define:vars={{ items }}>
+  // 打开模态窗口
+  function openModal(index) {
+    const item = items[index];
+    const modal = document.getElementById('showcase-modal');
+    const modalImage = document.getElementById('modal-image');
+    const modalTitle = document.getElementById('modal-title');
+    const modalDescription = document.getElementById('modal-description');
+    
+    if (modal && modalImage && modalTitle && modalDescription) {
+      // 将模态窗口移动到 body 的直接子元素，确保 fixed 定位相对于视口
+      if (modal.parentElement !== document.body) {
+        document.body.appendChild(modal);
+      }
+      
+      modalImage.src = item.image;
+      modalImage.alt = item.title;
+      modalTitle.textContent = item.title;
+      modalDescription.textContent = item.details || item.description;
+      
+      modal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+  }
+  
+  // 关闭模态窗口
+  function closeModal() {
+    const modal = document.getElementById('showcase-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+  }
+  
+  // 初始化：将模态窗口移动到 body 下
+  function initModal() {
+    const modal = document.getElementById('showcase-modal');
+    if (modal && modal.parentElement !== document.body) {
+      document.body.appendChild(modal);
+    }
+  }
+  
+  // 绑定所有事件
+  function bindEvents() {
+    // 初始化模态窗口位置
+    initModal();
+    
+    // 点击图片打开模态窗口
+    document.querySelectorAll('.showcase-image-wrapper').forEach((wrapper) => {
+      wrapper.addEventListener('click', (e) => {
+        const index = parseInt(wrapper.getAttribute('data-showcase-index'));
+        openModal(index);
+      });
+    });
+    
+    // 关闭按钮
+    const closeBtn = document.getElementById('modal-close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeModal();
+      });
+    }
+    
+    // 点击背景关闭
+    const backdrop = document.getElementById('modal-backdrop');
+    if (backdrop) {
+      backdrop.addEventListener('click', closeModal);
+    }
+  }
+  
+  // ESC键关闭（全局事件，只绑定一次）
+  let escListenerBound = false;
+  function bindEscListener() {
+    if (!escListenerBound) {
+      document.addEventListener('keydown', (e) => {
+        const modal = document.getElementById('showcase-modal');
+        if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+          closeModal();
+        }
+      });
+      escListenerBound = true;
+    }
+  }
+  
+  // 初始化函数
+  function init() {
+    bindEvents();
+    bindEscListener();
+  }
+  
+  // 监听多种页面加载事件
+  if (document.readyState === 'loading') {
+    // 页面还在加载中
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    // 页面已经加载完成（从外部链接进入时可能会这样）
+    init();
+  }
+  
+  // Astro View Transitions 支持
+  document.addEventListener('astro:page-load', init);
+  
+  // 额外的兜底：使用 setTimeout 延迟初始化
+  setTimeout(() => {
+    const wrappers = document.querySelectorAll('.showcase-image-wrapper');
+    if (wrappers.length > 0) {
+      // 检查是否已经绑定了事件
+      const firstWrapper = wrappers[0];
+      if (!firstWrapper.dataset.showcaseEventBound) {
+        wrappers.forEach((wrapper) => {
+          wrapper.dataset.showcaseEventBound = 'true';
+        });
+        bindEvents();
+      }
+    }
+  }, 100);
+</script>
+

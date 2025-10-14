@@ -12,8 +12,8 @@ export const siteConfig: SiteConfig = {
 	subtitle: "Main Page",
 	lang: "zh_CN", // 语言代码，例如 'en', 'zh_CN', 'ja' 等
 	themeColor: {
-		hue: 105, // 主题色的默认色相，范围 0 到 360。例如红色: 0，青色: 200，蓝色: 250，粉色: 345
-		fixed: false, // 隐藏访客的主题色选择器
+		hue: 200, // 主题色的默认色相，范围 0 到 360。例如红色: 0，青色: 200，蓝色: 250，粉色: 345
+		fixed: true, // 隐藏访客的主题色选择器
 	},
 	banner: {
 		enable: false,
@@ -112,6 +112,5 @@ export const licenseConfig: LicenseConfig = {
 
 export const expressiveCodeConfig: ExpressiveCodeConfig = {
 	// 注意：部分样式（如背景色）已被覆盖，详见 astro.config.mjs 文件。
-	// 请选择深色主题，因为本博客主题目前仅支持深色背景
-	theme: "github-dark",
+	theme: "github-light",
 };

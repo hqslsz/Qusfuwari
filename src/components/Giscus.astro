@@ -14,7 +14,7 @@
     data-reactions-enabled="1"
     data-emit-metadata="0"
     data-input-position="top"
-    data-theme="transparent"
+    data-theme="transparent_light"
     data-lang="zh-CN"
     data-loading="lazy"
     crossorigin="anonymous"
@@ -41,7 +41,7 @@
               {
                 giscus: {
                   setConfig: {
-                    theme: 'light'
+                    theme: 'transparent_light'
                   }
                 }
               },
@@ -62,6 +62,27 @@
   } else {
     initGiscusTheme();
   }
+
+  // 监听系统主题变化，确保始终使用透明浅色主题
+  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  const handleThemeChange = () => {
+    const iframe = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
+    if (iframe && iframe.contentWindow) {
+      iframe.contentWindow.postMessage(
+        {
+          giscus: {
+            setConfig: {
+              theme: 'transparent_light'
+            }
+          }
+        },
+        'https://giscus.app'
+      );
+    }
+  };
+
+  // 监听系统主题变化
+  mediaQuery.addEventListener('change', handleThemeChange);
 </script>
 
 <style>
@@ -69,5 +90,12 @@
     margin-top: 2rem;
     padding-top: 2rem;
     border-top: 1px solid var(--line-divider, #e5e7eb);
+    /* 使用透明背景，让背景图可见 */
+    background-color: transparent;
+  }
+
+  /* 确保 giscus iframe 也是透明的 */
+  .giscus-container :global(iframe.giscus-frame) {
+    background: transparent !important;
   }
 </style>
