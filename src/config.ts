@@ -32,7 +32,7 @@ export const siteConfig: SiteConfig = {
 		position: "center", // 背景位置: 'top', 'center', 'bottom'
 		size: "cover", // 背景大小: 'cover', 'contain', 'auto'
 		repeat: "no-repeat", // 背景重复: 'no-repeat', 'repeat'
-		attachment: "scroll", // 背景附着: 'fixed', 'scroll'
+		attachment: "fixed", // 背景附着: 'fixed', 'scroll'
 		opacity: 0.5, // 背景不透明度 (0-1)
 	},
 
