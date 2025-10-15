@@ -37,11 +37,12 @@
         // 等待 iframe 完全加载
         setTimeout(() => {
           if (iframe && iframe.contentWindow) {
+            // 始终使用透明浅色主题
             iframe.contentWindow.postMessage(
               {
                 giscus: {
                   setConfig: {
-                    theme: 'light'
+                    theme: 'transparent_light'
                   }
                 }
               },
@@ -77,4 +78,5 @@
   .giscus-container :global(iframe.giscus-frame) {
     background: transparent !important;
   }
+
 </style>
