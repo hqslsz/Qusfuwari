@@ -150,41 +150,23 @@
   }
 }
 
-/* ⭐ 新增：背景图相关的卡片透明度样式 */
+/* 背景图相关的卡片透明度样式 */
 :root {
-    /* 默认卡片背景（不透明） - 浅色模式 */
     --card-bg: rgba(255, 255, 255, 0.95);
     --float-panel-bg: rgba(255, 255, 255, 0.98);
-    
-    /* 透明卡片背景（当背景图启用时） - 浅色模式 */
     --card-bg-transparent: rgba(255, 255, 255, 0.75);
     --float-panel-bg-transparent: rgba(255, 255, 255, 0.85);
 }
 
-.dark {
-    /* 默认卡片背景（不透明） - 深色模式 */
-    --card-bg: rgba(30, 30, 30, 0.95);
-    --float-panel-bg: rgba(30, 30, 30, 0.98);
-    
-    /* 透明卡片背景（当背景图启用时） - 深色模式 */
-    --card-bg-transparent: rgba(30, 30, 30, 0.75);
-    --float-panel-bg-transparent: rgba(30, 30, 30, 0.85);
-}
-
-/* 为卡片添加毛玻璃效果（可选，让透明效果更美观） */
+/* 为卡片添加毛玻璃效果 */
 body.bg-loaded .card-base,
 body.bg-loaded .float-panel {
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
 }
 
-/* 确保卡片边框在透明时更明显（可选） */
 body.bg-loaded .card-base {
     border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.dark body.bg-loaded .card-base {
-    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 

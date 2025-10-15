@@ -105,51 +105,43 @@ const bannerOffset =
 			/>
 		))}
 
-		<!-- Set the theme before the page is rendered to avoid a flash -->
+		<!-- 初始化设置 -->
 		<script is:inline define:vars={{BANNER_HEIGHT_EXTEND, PAGE_WIDTH, configHue}}>
-			// 确保使用白天模式（移除 dark 类）
-			document.documentElement.classList.remove('dark');
-
-			// Load the hue from local storage
+			// 加载色调设置
 			const hue = localStorage.getItem('hue') || configHue;
 			document.documentElement.style.setProperty('--hue', hue);
 
-			// calculate the --banner-height-extend, which needs to be a multiple of 4 to avoid blurry text
+			// 计算banner高度
 			let offset = Math.floor(window.innerHeight * (BANNER_HEIGHT_EXTEND / 100));
 			offset = offset - offset % 4;
 			document.documentElement.style.setProperty('--banner-height-extend', `${offset}px`);
 
-			// ⭐ 新增：背景图加载检测
+			// 优化背景图加载
 			const bgUrl = getComputedStyle(document.documentElement).getPropertyValue('--bg-url').trim();
 			const bgEnable = getComputedStyle(document.documentElement).getPropertyValue('--bg-enable').trim();
 			
 			if (bgUrl && bgUrl !== 'none' && bgEnable === '1') {
-				const img = new Image();
 				const urlMatch = bgUrl.match(/url\(["']?([^"')]+)["']?\)/);
 				if (urlMatch) {
+					const img = new Image();
 					img.onload = function() {
-						// 背景图片完全加载后，显示背景并启用卡片透明效果
 						document.body.classList.add('bg-loaded');
 						document.documentElement.style.setProperty('--card-bg', 'var(--card-bg-transparent)');
 						document.documentElement.style.setProperty('--float-panel-bg', 'var(--float-panel-bg-transparent)');
 					};
 					img.onerror = function() {
-						// Keep cards opaque if background image fails to load
-						console.warn('Background image failed to load, keeping cards opaque');
+						console.warn('Background image failed to load');
 					};
-					// 移动端兼容性：添加crossOrigin属性
-					img.crossOrigin = 'anonymous';
 					img.src = urlMatch[1];
 					
-					// 移动端备用方案：如果图片加载超时，直接启用透明效果
+					// 超时处理：2秒后强制启用透明效果
 					setTimeout(() => {
 						if (!document.body.classList.contains('bg-loaded')) {
-							console.log('Background image load timeout, enabling transparency anyway');
 							document.body.classList.add('bg-loaded');
 							document.documentElement.style.setProperty('--card-bg', 'var(--card-bg-transparent)');
 							document.documentElement.style.setProperty('--float-panel-bg', 'var(--float-panel-bg-transparent)');
 						}
-					}, 3000);
+					}, 2000);
 				}
 			}
 		</script>
@@ -174,66 +166,27 @@ const bannerOffset =
 				--bg-opacity: var(--bg-opacity);
 			}
 			
-			/* Background image configuration */
-			body {
-				--bg-url: var(--bg-url);
-				--bg-enable: var(--bg-enable);
-				--bg-position: var(--bg-position);
-				--bg-size: var(--bg-size);
-				--bg-repeat: var(--bg-repeat);
-				--bg-attachment: var(--bg-attachment);
-				--bg-opacity: var(--bg-opacity);
-			}
-			
+			/* 背景图配置 */
 			body::before {
-				content: '' !important;
-				position: fixed !important;
-				top: 0 !important;
-				left: 0 !important;
-				width: 100% !important;
-				height: 100% !important;
-				background-image: var(--bg-url) !important;
-				background-position: var(--bg-position) !important;
-				background-size: var(--bg-size) !important;
-				background-repeat: var(--bg-repeat) !important;
-				background-attachment: var(--bg-attachment) !important;
-				opacity: 0 !important;
-				pointer-events: none !important;
-				z-index: -1 !important;
-				display: block !important;
-				transition: opacity 0.3s ease-in-out !important;
-			}
-			
-			/* 移动端兼容性修复 - 使用fixed但优化性能 */
-			@media (max-width: 768px) {
-				body::before {
-					position: fixed !important;
-					height: 100vh !important;
-					min-height: 100vh !important;
-					background-attachment: fixed !important;
-					/* 优化移动端性能 */
-					transform: translateZ(0);
-					-webkit-transform: translateZ(0);
-					will-change: transform;
-				}
-			}
-			
-			/* iOS Safari 特殊处理 - 强制使用fixed */
-			@supports (-webkit-touch-callout: none) {
-				body::before {
-					position: fixed !important;
-					height: 100vh !important;
-					min-height: 100vh !important;
-					background-attachment: fixed !important;
-					/* iOS Safari 优化 */
-					-webkit-backface-visibility: hidden;
-					backface-visibility: hidden;
-					transform: translate3d(0, 0, 0);
-				}
+				content: '';
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100vh;
+				background-image: var(--bg-url);
+				background-position: var(--bg-position);
+				background-size: var(--bg-size);
+				background-repeat: var(--bg-repeat);
+				opacity: 0;
+				pointer-events: none;
+				z-index: -1;
+				transition: opacity 0.3s ease;
+				will-change: opacity;
 			}
 			
 			body.bg-loaded::before {
-				opacity: calc(var(--bg-opacity) * var(--bg-enable)) !important;
+				opacity: calc(var(--bg-opacity) * var(--bg-enable));
 			}
 		</style>  <!-- defines global css variables. This will be applied to <html> <body> and some other elements idk why -->
 
@@ -372,9 +325,7 @@ setClickOutsideToClose("nav-menu-panel", ["nav-menu-panel", "nav-menu-switch"])
 setClickOutsideToClose("search-panel", ["search-panel", "search-bar", "search-switch"])
 
 
-function loadTheme() {
-	// 主题切换功能已删除，仅保留白天模式
-}
+// 主题切换功能已删除
 
 function loadHue() {
 	setHue(getHue())
@@ -458,8 +409,6 @@ function showBanner() {
 }
 
 function init() {
-	// disableAnimation()()		// TODO
-	loadTheme();
 	loadHue();
 	initCustomScrollbar();
 	showBanner();

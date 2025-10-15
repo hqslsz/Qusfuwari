@@ -1,33 +1,44 @@
 ---
 // src/components/PdfPreview.astro
-// 定义组件可以接收的属性
+// 使用浏览器原生PDF渲染 - 快速、简单、可靠
 export interface Props {
 	pdfUrl: string;
 }
 const { pdfUrl } = Astro.props;
 ---
 
-<!--
-  组件的 HTML 结构。
-  使用 class 代替 id 以便组件可以被多次复用。
-  通过 data-url 属性将 PDF 的路径传递给客户端脚本。
--->
-<div class="pdf-scroll-container" data-url={pdfUrl}>
-  <div class="pdf-viewer"></div>
+<div class="pdf-container" data-pdf-url={pdfUrl} data-pdf-lazy>
+  <div class="pdf-placeholder">
+    <div class="placeholder-content">
+      <svg class="placeholder-icon" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <line x1="16" y1="13" x2="8" y2="13"></line>
+        <line x1="16" y1="17" x2="8" y2="17"></line>
+        <polyline points="10 9 9 9 8 9"></polyline>
+      </svg>
+      <div class="placeholder-text">点击加载 PDF</div>
+      <button class="load-pdf-button">加载 PDF</button>
+    </div>
+  </div>
+  
   <div class="pdf-controls">
-    <a href={pdfUrl} download class="download-button" aria-label="下载 PDF">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        class="icon-download"
-      >
+    <button class="close-pdf-button">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+      <span>收起 PDF</span>
+    </button>
+    <a href={pdfUrl} target="_blank" rel="noopener noreferrer" class="view-button">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+        <polyline points="15 3 21 3 21 9"></polyline>
+        <line x1="10" y1="14" x2="21" y2="3"></line>
+      </svg>
+      <span>新窗口打开</span>
+    </a>
+    <a href={pdfUrl} download class="download-button">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
         <polyline points="7 10 12 15 17 10"></polyline>
         <line x1="12" y1="15" x2="12" y2="3"></line>
@@ -38,209 +49,324 @@ const { pdfUrl } = Astro.props;
 </div>
 
 <style is:global>
-  .pdf-scroll-container {
+  .pdf-container {
     width: 100%;
-    overflow-x: auto;
     margin: 2rem 0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.02), transparent);
+    border: 1px solid rgba(0, 0, 0, 0.08);
   }
 
-  .pdf-viewer {
+  .pdf-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    padding: 3rem;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.02) 0%, rgba(0, 0, 0, 0.01) 100%);
+  }
+
+  .pdf-container[data-loaded] .pdf-placeholder {
+    display: none;
+  }
+
+  .placeholder-content {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 1.25rem;
-    width: 100%;
-    padding: 1rem;
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.02), transparent);
-    border-radius: 12px;
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
   }
 
-  .pdf-viewer :global(canvas) {
-    max-width: 100%;
-    height: auto;
-    box-shadow: 
-      0 10px 25px -5px rgba(0, 0, 0, 0.1),
-      0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  .placeholder-content:hover {
+    opacity: 0.9;
+  }
+
+  .placeholder-icon {
+    color: var(--text-color, #666);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  .placeholder-text {
+    font-size: 1rem;
+    color: var(--text-color, #666);
+    font-weight: 500;
+  }
+
+  .load-pdf-button {
+    padding: 0.75rem 2rem;
+    background: oklch(0.65 0.15 var(--hue));
+    color: white;
+    border: none;
     border-radius: 8px;
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px oklch(0.65 0.15 var(--hue) / 0.3);
   }
 
-  .pdf-viewer :global(canvas:hover) {
-    transform: translateY(-2px);
-    box-shadow: 
-      0 20px 40px -10px rgba(0, 0, 0, 0.15),
-      0 10px 15px -8px rgba(0, 0, 0, 0.1);
+  .load-pdf-button:hover {
+    background: oklch(0.70 0.16 var(--hue));
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px oklch(0.65 0.15 var(--hue) / 0.4);
+  }
+
+  .load-pdf-button:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px oklch(0.65 0.15 var(--hue) / 0.3);
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+
+  .pdf-iframe {
+    width: 100%;
+    height: 700px;
+    border: none;
+    display: block;
+    background: #525659;
   }
 
   .pdf-controls {
-    margin-top: 2rem;
-    text-align: center;
-    padding: 1rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    align-items: center;
+    padding: 1.5rem;
+    background: rgba(0, 0, 0, 0.02);
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
   }
 
+  .close-pdf-button {
+    display: none; /* 默认隐藏 */
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    background: transparent;
+    color: var(--text-color, #666);
+  }
+
+  .pdf-container[data-loaded] .close-pdf-button {
+    display: inline-flex; /* PDF加载后显示关闭按钮 */
+  }
+
+  .close-pdf-button:hover {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.25);
+    transform: translateY(-1px);
+  }
+
+  .close-pdf-button:active {
+    transform: translateY(0);
+  }
+
+  .view-button,
   .download-button {
     display: inline-flex !important;
     align-items: center;
     justify-content: center;
-    gap: 0.625rem;
-    background: oklch(0.65 0.15 var(--hue)) !important;
-    color: #ffffff !important;
-    padding: 0.875rem 2rem !important;
-    border-radius: 12px !important;
-    border: none !important;
-    font-size: 1rem;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem !important;
+    border-radius: 8px !important;
+    font-size: 0.9rem;
     font-weight: 600;
     text-decoration: none !important;
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 2px 8px oklch(0.65 0.15 var(--hue) / 0.3) !important;
-    position: relative;
+    border: none !important;
   }
 
+  .view-button::before,
   .download-button::before {
-    display: none;
+    display: none !important;
+  }
+
+  .view-button {
+    background: oklch(0.50 0.10 var(--hue)) !important;
+    color: white !important;
+    box-shadow: 0 2px 6px oklch(0.50 0.10 var(--hue) / 0.3);
+  }
+
+  .view-button:hover {
+    background: oklch(0.55 0.12 var(--hue)) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px oklch(0.50 0.10 var(--hue) / 0.4);
+  }
+
+  .download-button {
+    background: oklch(0.65 0.15 var(--hue)) !important;
+    color: white !important;
+    box-shadow: 0 2px 6px oklch(0.65 0.15 var(--hue) / 0.3);
   }
 
   .download-button:hover {
-    transform: translateY(-1px) !important;
-    box-shadow: 0 4px 12px oklch(0.65 0.15 var(--hue) / 0.4) !important;
     background: oklch(0.70 0.16 var(--hue)) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px oklch(0.65 0.15 var(--hue) / 0.4);
   }
 
-  .download-button:hover::before {
-    display: none;
-  }
-
-  /* 防止主题样式覆盖 - 使用更高优先级 */
-  .pdf-controls a.download-button,
-  .pdf-controls a.download-button:link,
-  .pdf-controls a.download-button:visited,
-  .pdf-scroll-container a.download-button {
-    background: oklch(0.65 0.15 var(--hue)) !important;
-    color: #ffffff !important;
-  }
-
-  .pdf-controls a.download-button:hover,
-  .pdf-controls a.download-button:focus,
-  .pdf-scroll-container a.download-button:hover {
-    background: oklch(0.70 0.16 var(--hue)) !important;
-    color: #ffffff !important;
-  }
-
-  .pdf-controls a.download-button:active,
-  .pdf-scroll-container a.download-button:active {
-    background: oklch(0.60 0.14 var(--hue)) !important;
-    color: #ffffff !important;
-  }
-
+  .view-button:active,
   .download-button:active {
-    transform: translateY(0) !important;
-    box-shadow: 0 1px 4px oklch(0.65 0.15 var(--hue) / 0.3) !important;
-  }
-
-  .download-button .icon-download {
-    width: 1.25em;
-    height: 1.25em;
+    transform: translateY(0);
   }
 
   /* 深色模式支持 */
   @media (prefers-color-scheme: dark) {
-    .pdf-viewer {
+    .pdf-container {
       background: linear-gradient(to bottom, rgba(255, 255, 255, 0.03), transparent);
-    }
-
-    .pdf-viewer :global(canvas) {
       border-color: rgba(255, 255, 255, 0.1);
-      box-shadow: 
-        0 10px 25px -5px rgba(0, 0, 0, 0.3),
-        0 8px 10px -6px rgba(0, 0, 0, 0.3);
     }
 
-    .pdf-viewer :global(canvas:hover) {
-      box-shadow: 
-        0 20px 40px -10px rgba(0, 0, 0, 0.4),
-        0 10px 15px -8px rgba(0, 0, 0, 0.3);
+    .pdf-placeholder {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+    }
+
+    .pdf-controls {
+      background: rgba(255, 255, 255, 0.03);
+      border-top-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .close-pdf-button {
+      border-color: rgba(255, 255, 255, 0.15);
+      color: var(--text-color, #ccc);
+    }
+
+    .close-pdf-button:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.25);
     }
   }
 
   /* 响应式设计 */
   @media (max-width: 640px) {
-    .pdf-viewer {
-      padding: 0.5rem;
-      gap: 1rem;
-    }
-
-    .download-button {
-      padding: 0.75rem 1.5rem;
-      font-size: 0.9375rem;
-      width: 100%;
-      max-width: 280px;
+    .pdf-iframe {
+      height: 500px;
     }
 
     .pdf-controls {
-      margin-top: 1.5rem;
+      flex-direction: column;
+      padding: 1rem;
+    }
+
+    .close-pdf-button,
+    .view-button,
+    .download-button {
+      width: 100%;
+      padding: 0.875rem 1.5rem !important;
+    }
+
+    .placeholder-content {
+      padding: 1rem;
+    }
+
+    .load-pdf-button {
+      width: 100%;
+      max-width: 250px;
     }
   }
 </style>
 
-<script type="module">
-  import * as pdfjsLib from "https://mozilla.github.io/pdf.js/build/pdf.mjs";
-
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://mozilla.github.io/pdf.js/build/pdf.worker.mjs`;
-
+<script>
   /**
-   * 渲染单个 PDF 组件实例。
-   * @param {HTMLElement} container - 组件的顶层容器元素。
+   * PDF懒加载 - 使用iframe原生渲染
+   * 优点：快速、不需要额外库、浏览器原生支持
    */
-  async function renderPdfInstance(container) {
-    const viewer = container.querySelector(".pdf-viewer");
-    if (!viewer) return;
+  
+  function initPdfLazyLoad() {
+    const containers = document.querySelectorAll('[data-pdf-lazy]');
+    
+    if (!containers.length) return;
 
-    if (container.dataset.initialized === "true") return;
-    container.dataset.initialized = "true";
+    containers.forEach((container: Element) => {
+      const loadButton = container.querySelector('.load-pdf-button');
+      const closeButton = container.querySelector('.close-pdf-button');
+      const pdfUrl = container.getAttribute('data-pdf-url');
+      
+      if (!pdfUrl) return;
 
-    viewer.innerHTML = "";
-    const url = container.dataset.url;
+      // 点击按钮加载PDF
+      loadButton?.addEventListener('click', () => {
+        loadPdf(container as HTMLElement, pdfUrl);
+      });
 
-    try {
-      // 获取容器的实际宽度以实现响应式渲染
-      const containerWidth = viewer.clientWidth;
-      if (containerWidth === 0) {
-        console.warn("PDF viewer container has no width, PDF might not render correctly.");
-        return;
-      }
-      const pdfDoc = await pdfjsLib.getDocument(url).promise;
-      // 并发渲染所有页面
-      const renderTasks = [];
-      for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
-        renderTasks.push(
-          (async () => {
-            const page = await pdfDoc.getPage(pageNum);
-            const viewportUnscaled = page.getViewport({ scale: 1 });
-            const scale = containerWidth / viewportUnscaled.width;
-            const viewport = page.getViewport({ scale: scale });
+      // 点击关闭按钮收起PDF
+      closeButton?.addEventListener('click', () => {
+        closePdf(container as HTMLElement);
+      });
 
-            const canvas = document.createElement("canvas");
-            const ctx = canvas.getContext("2d");
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
-            viewer.appendChild(canvas);
+      // 使用 Intersection Observer 自动加载（滚动到附近时）
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !entry.target.hasAttribute('data-loaded')) {
+            // 注释掉自动加载，改为仅显示按钮
+            // 用户需要主动点击才加载，避免一次加载太多PDF
+            // loadPdf(entry.target as HTMLElement, pdfUrl);
+            // observer.unobserve(entry.target);
+          }
+        });
+      }, {
+        rootMargin: '200px',
+        threshold: 0
+      });
 
-            await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-          })(),
-        );
-      }
-      await Promise.all(renderTasks);
-    } catch (error) {
-      console.error(`渲染 PDF (${url}) 时出错:`, error);
-      viewer.innerHTML = `<p style="color: red;">加载 PDF 失败: ${error.message}</p>`;
+      observer.observe(container);
+    });
+  }
+
+  function loadPdf(container: HTMLElement, pdfUrl: string) {
+    if (container.hasAttribute('data-loaded')) return;
+    
+    container.setAttribute('data-loaded', 'true');
+    
+    // 创建iframe加载PDF
+    const iframe = document.createElement('iframe');
+    iframe.className = 'pdf-iframe';
+    iframe.src = pdfUrl;
+    iframe.title = 'PDF预览';
+    
+    // 插入iframe
+    const placeholder = container.querySelector('.pdf-placeholder');
+    if (placeholder) {
+      container.insertBefore(iframe, placeholder);
+      // 稍等片刻后隐藏占位符，让iframe有时间加载
+      setTimeout(() => {
+        (placeholder as HTMLElement).style.display = 'none';
+      }, 100);
+    } else {
+      container.insertBefore(iframe, container.firstChild);
     }
   }
-  function initializeAllPdfViewers() {
-    const containers = document.querySelectorAll(".pdf-scroll-container");
-    containers.forEach(renderPdfInstance);
+
+  function closePdf(container: HTMLElement) {
+    // 移除加载标记
+    container.removeAttribute('data-loaded');
+    
+    // 移除iframe
+    const iframe = container.querySelector('.pdf-iframe');
+    if (iframe) {
+      iframe.remove();
+    }
+    
+    // 重新显示占位符
+    const placeholder = container.querySelector('.pdf-placeholder');
+    if (placeholder) {
+      (placeholder as HTMLElement).style.display = 'flex';
+    }
   }
-  document.addEventListener("astro:page-load", initializeAllPdfViewers);
-  initializeAllPdfViewers();
+
+  // 页面加载和路由切换时初始化
+  document.addEventListener('astro:page-load', initPdfLazyLoad);
+  initPdfLazyLoad();
 </script>

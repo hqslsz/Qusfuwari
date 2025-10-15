@@ -1,82 +1,104 @@
 ---
-// src/components/Giscus.astro
+// Giscus评论组件 - 使用懒加载优化性能
 ---
 
-<div class="giscus-container">
-  <script 
-    src="https://giscus.app/client.js"
-    data-repo="hqslsz/fuwari"
-    data-repo-id="R_kgDOP7oSqQ"
-    data-category="Announcements"
-    data-category-id="DIC_kwDOP7oSqc4CwRKO"
-    data-mapping="pathname"
-    data-strict="0"
-    data-reactions-enabled="1"
-    data-emit-metadata="0"
-    data-input-position="top"
-    data-theme="transparent_light"
-    data-lang="zh-CN"
-    data-loading="lazy"
-    crossorigin="anonymous"
-    async>
-  </script>
+<div class="giscus-container" data-giscus-lazy>
+  <div class="giscus-placeholder">
+    <div class="loading-text">评论区加载中...</div>
+  </div>
 </div>
-
-<script>
-  // 确保只运行一次
-  let isInitialized = false;
-
-  function initGiscusTheme() {
-    if (isInitialized) return;
-    isInitialized = true;
-
-    const checkIframe = setInterval(() => {
-      const iframe = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
-      if (iframe) {
-        clearInterval(checkIframe);
-        // 等待 iframe 完全加载
-        setTimeout(() => {
-          if (iframe && iframe.contentWindow) {
-            // 始终使用透明浅色主题
-            iframe.contentWindow.postMessage(
-              {
-                giscus: {
-                  setConfig: {
-                    theme: 'transparent_light'
-                  }
-                }
-              },
-              'https://giscus.app'
-            );
-          }
-        }, 500);
-      }
-    }, 100);
-
-    // 10秒后停止检查
-    setTimeout(() => clearInterval(checkIframe), 10000);
-  }
-
-  // 页面加载完成后初始化
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initGiscusTheme);
-  } else {
-    initGiscusTheme();
-  }
-</script>
 
 <style>
   .giscus-container {
     margin-top: 2rem;
     padding-top: 2rem;
-    border-top: 1px solid var(--line-divider, #e5e7eb);
-    /* 使用透明背景，让背景图可见 */
+    border-top: 1px solid var(--line-divider);
     background-color: transparent;
+    min-height: 200px;
   }
 
-  /* 确保 giscus iframe 也是透明的 */
+  .giscus-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 0;
+    opacity: 0.6;
+  }
+
+  .loading-text {
+    font-size: 0.9rem;
+    color: var(--text-color, #666);
+  }
+
   .giscus-container :global(iframe.giscus-frame) {
-    background: transparent !important;
+    background: transparent;
+    color-scheme: light;
   }
 
+  .giscus-container[data-loaded] .giscus-placeholder {
+    display: none;
+  }
 </style>
+
+<script>
+  // Giscus懒加载逻辑 - 使用 Intersection Observer
+  function initGiscusLazyLoad() {
+    const giscusContainers = document.querySelectorAll('[data-giscus-lazy]');
+    
+    if (!giscusContainers.length) return;
+
+    // 检查是否已加载过 Giscus
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting && !entry.target.hasAttribute('data-loaded')) {
+          entry.target.setAttribute('data-loaded', 'true');
+          loadGiscus(entry.target);
+          observer.unobserve(entry.target);
+        }
+      });
+    }, {
+      rootMargin: '200px', // 提前200px开始加载
+      threshold: 0
+    });
+
+    giscusContainers.forEach((container) => {
+      observer.observe(container);
+    });
+  }
+
+  function loadGiscus(container: Element) {
+    // 移除占位符
+    const placeholder = container.querySelector('.giscus-placeholder');
+    
+    // 创建 Giscus 脚本
+    const script = document.createElement('script');
+    script.src = 'https://giscus.app/client.js';
+    script.setAttribute('data-repo', 'hqslsz/fuwari');
+    script.setAttribute('data-repo-id', 'R_kgDOP7oSqQ');
+    script.setAttribute('data-category', 'Announcements');
+    script.setAttribute('data-category-id', 'DIC_kwDOP7oSqc4CwRKO');
+    script.setAttribute('data-mapping', 'pathname');
+    script.setAttribute('data-strict', '0');
+    script.setAttribute('data-reactions-enabled', '1');
+    script.setAttribute('data-emit-metadata', '0');
+    script.setAttribute('data-input-position', 'top');
+    script.setAttribute('data-theme', 'transparent_light');
+    script.setAttribute('data-lang', 'zh-CN');
+    script.setAttribute('data-loading', 'lazy');
+    script.setAttribute('crossorigin', 'anonymous');
+    script.async = true;
+
+    // 脚本加载后移除占位符
+    script.onload = () => {
+      if (placeholder) {
+        placeholder.remove();
+      }
+    };
+
+    container.appendChild(script);
+  }
+
+  // 页面加载和路由切换时初始化
+  document.addEventListener('astro:page-load', initGiscusLazyLoad);
+  initGiscusLazyLoad();
+</script>
