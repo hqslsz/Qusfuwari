@@ -41,7 +41,7 @@
               {
                 giscus: {
                   setConfig: {
-                    theme: 'transparent_light'
+                    theme: 'light'
                   }
                 }
               },
@@ -62,27 +62,6 @@
   } else {
     initGiscusTheme();
   }
-
-  // 监听系统主题变化，确保始终使用透明浅色主题
-  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-  const handleThemeChange = () => {
-    const iframe = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
-    if (iframe && iframe.contentWindow) {
-      iframe.contentWindow.postMessage(
-        {
-          giscus: {
-            setConfig: {
-              theme: 'transparent_light'
-            }
-          }
-        },
-        'https://giscus.app'
-      );
-    }
-  };
-
-  // 监听系统主题变化
-  mediaQuery.addEventListener('change', handleThemeChange);
 </script>
 
 <style>
