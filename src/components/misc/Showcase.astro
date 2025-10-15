@@ -4,6 +4,7 @@ interface ShowcaseItem {
   image: string;
   description: string; // 悬停时显示的简短描述
   details?: string; // 点击后模态窗口显示的详细描述
+  link?: string; // 可选的外部链接
 }
 
 interface Props {
@@ -63,15 +64,29 @@ const { title, items } = Astro.props;
         </svg>
       </button>
       
-      <!-- 模态窗口图片 -->
-      <div class="modal-image-container">
+      <!-- 图片和内容合并区域 -->
+      <div class="modal-image-content-wrapper">
+        <!-- 背景图片 -->
         <img id="modal-image" src="" alt="" class="modal-image" />
-      </div>
-      
-      <!-- 模态窗口内容 -->
-      <div class="modal-body">
-        <h2 id="modal-title" class="modal-title"></h2>
-        <div id="modal-description" class="modal-description"></div>
+        
+        <!-- 渐变遮罩 - 让下半部分变暗以便显示文字 -->
+        <div class="modal-overlay"></div>
+        
+        <!-- 文字内容 - 叠加在图片下半部分 -->
+        <div class="modal-text-overlay">
+          <h2 id="modal-title" class="modal-title"></h2>
+          <div id="modal-description" class="modal-description"></div>
+        </div>
+        
+        <!-- Visit Link 按钮 - 左下角 -->
+        <a id="modal-link" href="#" target="_blank" rel="noopener noreferrer" class="modal-link-btn hidden">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+          </svg>
+          <span>Visit Link</span>
+        </a>
       </div>
     </div>
   </div>
@@ -174,44 +189,137 @@ const { title, items } = Astro.props;
     transform: scale(1.1);
   }
   
-  /* 模态窗口图片 */
-  .modal-image-container {
+  /* 图片和内容合并区域 */
+  .modal-image-content-wrapper {
+    position: relative;
     width: 100%;
-    max-height: 400px;
+    height: 600px;
     overflow: hidden;
-    background: #f0f0f0;
     flex-shrink: 0;
   }
   
+  /* 背景图片 - 全屏铺满 */
   .modal-image {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    max-height: 400px;
     object-fit: cover;
     display: block;
   }
   
-  /* 模态窗口文本内容 */
-  .modal-body {
-    padding: 2rem;
-    overflow-y: auto;
-    flex: 1;
-    min-height: 0;
+  /* 渐变遮罩 - 从上半部分透明到下半部分半透明黑色 */
+  .modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      transparent 40%,
+      rgba(0, 0, 0, 0.5) 70%,
+      rgba(0, 0, 0, 0.85) 100%
+    );
+    pointer-events: none;
+  }
+  
+  /* 文字内容叠加层 - 定位在下半部分 */
+  .modal-text-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 2rem 2rem 4rem 2rem;
+    color: white;
+    z-index: 1;
   }
   
   .modal-title {
     font-size: 1.75rem;
     font-weight: bold;
-    color: var(--text-90);
+    color: white;
     margin-bottom: 1rem;
     line-height: 1.3;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   }
   
   .modal-description {
-    font-size: 1rem;
-    line-height: 1.8;
-    color: var(--text-75);
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.95);
     white-space: pre-wrap;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 1rem;
+  }
+  
+  /* 自定义滚动条 */
+  .modal-description::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  .modal-description::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+  }
+  
+  .modal-description::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+  }
+  
+  .modal-description::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+  }
+  
+  /* Visit Link 按钮 - 左下角，缩小尺寸 */
+  .modal-link-btn {
+    position: absolute !important;
+    bottom: 1.25rem;
+    left: 1.25rem;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 0.5rem 1rem !important;
+    background: oklch(0.65 0.15 var(--hue)) !important;
+    color: white !important;
+    font-weight: 600;
+    font-size: 0.75rem;
+    border-radius: 6px !important;
+    text-decoration: none !important;
+    border: none !important;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    z-index: 2;
+  }
+  
+  .modal-link-btn.hidden {
+    display: none !important;
+  }
+  
+  .modal-link-btn::before {
+    display: none !important;
+  }
+  
+  .modal-link-btn:hover {
+    background: oklch(0.70 0.16 var(--hue)) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  }
+  
+  .modal-link-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  }
+  
+  .modal-link-btn svg {
+    flex-shrink: 0;
   }
   
   /* 动画 */
@@ -243,19 +351,15 @@ const { title, items } = Astro.props;
     }
     
     .modal-content {
-      max-height: 85vh;
+      max-height: 90vh;
     }
     
-    .modal-image-container {
-      max-height: 250px;
+    .modal-image-content-wrapper {
+      height: 500px;
     }
     
-    .modal-image {
-      max-height: 250px;
-    }
-    
-    .modal-body {
-      padding: 1.5rem;
+    .modal-text-overlay {
+      padding: 1.5rem 1.5rem 3.5rem 1.5rem;
     }
     
     .modal-title {
@@ -263,7 +367,8 @@ const { title, items } = Astro.props;
     }
     
     .modal-description {
-      font-size: 0.95rem;
+      font-size: 0.9rem;
+      max-height: 150px;
     }
     
     .modal-close {
@@ -272,125 +377,124 @@ const { title, items } = Astro.props;
       top: 0.75rem;
       right: 0.75rem;
     }
+    
+    .modal-link-btn {
+      bottom: 1rem;
+      left: 1rem;
+      padding: 0.45rem 0.85rem !important;
+      font-size: 0.7rem;
+      gap: 0.3rem;
+    }
+    
+    .modal-link-btn svg {
+      width: 10px;
+      height: 10px;
+    }
   }
 </style>
 
 <script define:vars={{ items }}>
+  // 状态管理
+  const state = {
+    modal: null,
+    elements: {}
+  };
+
+  // 获取 DOM 元素（懒加载）
+  function getElements() {
+    if (!state.modal) {
+      state.modal = document.getElementById('showcase-modal');
+      state.elements = {
+        image: document.getElementById('modal-image'),
+        title: document.getElementById('modal-title'),
+        description: document.getElementById('modal-description'),
+        link: document.getElementById('modal-link'),
+        closeBtn: document.getElementById('modal-close'),
+        backdrop: document.getElementById('modal-backdrop')
+      };
+    }
+    return { modal: state.modal, ...state.elements };
+  }
+
+  // 更新模态窗口内容
+  function updateModalContent(item) {
+    const { image, title, description, link } = getElements();
+    
+    image.src = item.image;
+    image.alt = item.title;
+    title.textContent = item.title;
+    description.textContent = item.details || item.description;
+    
+    // 更新链接按钮显示
+    if (item.link) {
+      link.href = item.link;
+      link.classList.remove('hidden');
+    } else {
+      link.classList.add('hidden');
+    }
+  }
+
   // 打开模态窗口
   function openModal(index) {
     const item = items[index];
-    const modal = document.getElementById('showcase-modal');
-    const modalImage = document.getElementById('modal-image');
-    const modalTitle = document.getElementById('modal-title');
-    const modalDescription = document.getElementById('modal-description');
+    const { modal } = getElements();
     
-    if (modal && modalImage && modalTitle && modalDescription) {
-      // 将模态窗口移动到 body 的直接子元素，确保 fixed 定位相对于视口
-      if (modal.parentElement !== document.body) {
-        document.body.appendChild(modal);
-      }
-      
-      modalImage.src = item.image;
-      modalImage.alt = item.title;
-      modalTitle.textContent = item.title;
-      modalDescription.textContent = item.details || item.description;
-      
-      modal.classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
+    if (!modal) return;
+    
+    // 确保模态窗口在 body 下
+    if (modal.parentElement !== document.body) {
+      document.body.appendChild(modal);
     }
+    
+    updateModalContent(item);
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
   }
-  
+
   // 关闭模态窗口
   function closeModal() {
-    const modal = document.getElementById('showcase-modal');
+    const { modal } = getElements();
     if (modal) {
       modal.classList.add('hidden');
       document.body.style.overflow = '';
     }
   }
-  
-  // 初始化：将模态窗口移动到 body 下
-  function initModal() {
-    const modal = document.getElementById('showcase-modal');
-    if (modal && modal.parentElement !== document.body) {
-      document.body.appendChild(modal);
-    }
-  }
-  
-  // 绑定所有事件
+
+  // 绑定事件
   function bindEvents() {
-    // 初始化模态窗口位置
-    initModal();
-    
-    // 点击图片打开模态窗口
+    // 图片点击事件
     document.querySelectorAll('.showcase-image-wrapper').forEach((wrapper) => {
-      wrapper.addEventListener('click', (e) => {
-        const index = parseInt(wrapper.getAttribute('data-showcase-index'));
-        openModal(index);
-      });
+      const index = parseInt(wrapper.dataset.showcaseIndex, 10);
+      wrapper.onclick = () => openModal(index);
     });
     
     // 关闭按钮
-    const closeBtn = document.getElementById('modal-close');
-    if (closeBtn) {
-      closeBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        closeModal();
-      });
-    }
+    const { closeBtn, backdrop } = getElements();
+    if (closeBtn) closeBtn.onclick = (e) => { e.stopPropagation(); closeModal(); };
+    if (backdrop) backdrop.onclick = closeModal;
     
-    // 点击背景关闭
-    const backdrop = document.getElementById('modal-backdrop');
-    if (backdrop) {
-      backdrop.addEventListener('click', closeModal);
-    }
+    // ESC 键关闭
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && state.modal && !state.modal.classList.contains('hidden')) {
+        closeModal();
+      }
+    });
   }
-  
-  // ESC键关闭（全局事件，只绑定一次）
-  let escListenerBound = false;
-  function bindEscListener() {
-    if (!escListenerBound) {
-      document.addEventListener('keydown', (e) => {
-        const modal = document.getElementById('showcase-modal');
-        if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
-          closeModal();
-        }
-      });
-      escListenerBound = true;
-    }
-  }
-  
-  // 初始化函数
+
+  // 初始化
   function init() {
+    getElements();
     bindEvents();
-    bindEscListener();
   }
-  
-  // 监听多种页面加载事件
+
+  // 页面加载
   if (document.readyState === 'loading') {
-    // 页面还在加载中
     document.addEventListener('DOMContentLoaded', init);
   } else {
-    // 页面已经加载完成（从外部链接进入时可能会这样）
     init();
   }
-  
+
   // Astro View Transitions 支持
   document.addEventListener('astro:page-load', init);
-  
-  // 额外的兜底：使用 setTimeout 延迟初始化
-  setTimeout(() => {
-    const wrappers = document.querySelectorAll('.showcase-image-wrapper');
-    if (wrappers.length > 0) {
-      // 检查是否已经绑定了事件
-      const firstWrapper = wrappers[0];
-      if (!firstWrapper.dataset.showcaseEventBound) {
-        wrappers.forEach((wrapper) => {
-          wrapper.dataset.showcaseEventBound = 'true';
-        });
-        bindEvents();
-      }
-    }
-  }, 100);
 </script>
 
