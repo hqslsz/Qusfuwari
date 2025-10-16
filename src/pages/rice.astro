@@ -15,7 +15,21 @@ if (!ricePost) {
 const { Content } = await render(ricePost);
 ---
 <MainGridLayout title={i18n(I18nKey.rice)} description={i18n(I18nKey.rice)}>
-    <div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative min-h-32">
+    <!-- 超酷背景效果容器 -->
+    <div class="hero-background-section card-base">
+        <div class="hero-wrapper">
+            <div class="japanese" aria-hidden="true">
+                <!-- "米"字符号 -->
+                <div class="rice-symbol">「 米 」</div>
+                
+                <!-- 日文背景文字 -->
+                <div class="wisdoms">'ベンソンハウス-デイアングルオン：地面にスニーカー。カメラが上に移動して、バリーベンソンのベッドルームアングルを表示します。バリーの手がクローゼットの中でさまざまなセーターをめくっています。バリーイエローブラック、イエローブラック、イエローブラック、イエローブラック、イエローブラック、イエローブラック...うーん、ブラックとイエロー...アングル：バリーが選んだセーターを着て、鏡を見て。バリー（続き）ええ、少し振りましょう彼は黒と黄色のものを選びます。彼はそれから流しに行き、蜂蜜の容器を外し、髪に蜂蜜を入れます。彼は口の中でいくつか潮吹きしてうがいをします。それから彼はボトルの蓋を外し、デオドラントのようにいくつかを転がします。カット'</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 内容卡片 -->
+    <div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative min-h-32 content-card">
         <div class="card-base z-10 px-9 py-6 relative w-full ">
             <Markdown class="mt-2">
                 <Content />
@@ -23,4 +37,169 @@ const { Content } = await render(ricePost);
         </div>
     </div>
 </MainGridLayout>
+
+<style>
+    /* 背景容器 */
+    .hero-background-section {
+        position: relative;
+        width: 100%;
+        min-height: 60vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        margin-bottom: 2rem;
+        border-radius: var(--radius-large);
+    }
+
+    /* Hero包装器 */
+    .hero-wrapper {
+        display: flex;
+        position: relative;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: max-content;
+        height: 60vh;
+        max-height: 600px;
+        width: 100%;
+    }
+
+    /* 日文容器 */
+    .japanese {
+        position: relative;
+        width: 100%;
+        height: max-content;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        user-select: none;
+        animation: enter 0.6s ease-in-out both;
+        z-index: 1;
+    }
+
+    @keyframes enter {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* "米"字符号 */
+    .rice-symbol {
+        position: relative;
+        z-index: 2;
+        white-space: nowrap;
+        font-size: 120px;
+        color: transparent;
+        background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 50%, #8b5cf6 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        font-weight: 700;
+        filter: drop-shadow(0px 0px 30px rgba(14, 165, 233, 0.25));
+        animation: glow 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes glow {
+        from {
+            filter: drop-shadow(0px 0px 20px rgba(14, 165, 233, 0.2));
+        }
+        to {
+            filter: drop-shadow(0px 0px 40px rgba(14, 165, 233, 0.4));
+        }
+    }
+
+    /* 日文背景文字 */
+    .wisdoms {
+        position: absolute;
+        width: 500px;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        z-index: 0;
+        opacity: 0.85;
+        margin-top: -2rem;
+        -webkit-mask-image: linear-gradient(to top, transparent, white);
+        mask-image: linear-gradient(to top, transparent, white);
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #0ea5e9 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-shadow: 0px 0px 15px rgba(37, 99, 235, 0.5);
+        text-align: center;
+        line-height: 1.6;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    /* 内容卡片间距 */
+    .content-card {
+        margin-top: 1rem;
+    }
+
+    /* 深色主题适配 */
+    :global(.dark) .rice-symbol {
+        background: linear-gradient(135deg, #22d3ee 0%, #60a5fa 50%, #a78bfa 100%);
+        filter: drop-shadow(0px 0px 30px rgba(34, 211, 238, 0.4));
+    }
+
+    :global(.dark) .rice-symbol {
+        animation: glow-dark 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes glow-dark {
+        from {
+            filter: drop-shadow(0px 0px 30px rgba(34, 211, 238, 0.3));
+        }
+        to {
+            filter: drop-shadow(0px 0px 50px rgba(34, 211, 238, 0.6));
+        }
+    }
+
+    :global(.dark) .wisdoms {
+        background: linear-gradient(135deg, #22d3ee 0%, #60a5fa 50%, #38bdf8 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-shadow: 0px 0px 18px rgba(34, 211, 238, 0.6);
+        opacity: 0.85;
+    }
+
+    /* 响应式调整 */
+    @media (max-width: 768px) {
+        .hero-background-section {
+            min-height: 40vh;
+        }
+
+        .hero-wrapper {
+            height: 40vh;
+            max-height: 400px;
+        }
+
+        .rice-symbol {
+            font-size: 80px;
+        }
+
+        .wisdoms {
+            width: 300px;
+            font-size: 12px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .rice-symbol {
+            font-size: 60px;
+        }
+
+        .wisdoms {
+            width: 250px;
+            font-size: 11px;
+        }
+    }
+</style>
 
