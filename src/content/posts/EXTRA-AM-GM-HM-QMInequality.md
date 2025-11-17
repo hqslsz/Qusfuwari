@@ -13,7 +13,7 @@ $$\frac{2}{\frac{1}{a} + \frac{1}{b}} \le \sqrt{ab} \le \frac{a+b}{2} \le \sqrt{
 
 $H \le G \le A \le Q$
 
-# 仔细观察，不难发现。除$\sqrt{ab}$外，它们都符合这样一个通式：
+仔细观察，不难发现。除$\sqrt{ab}$外，它们都符合这样一个通式：
 $$f(x) = \left(\frac{a^x + b^x}{2}\right)^{\frac{1}{x}}$$
 这就是我们说的**幂平均函数**。
 
@@ -23,7 +23,7 @@ $\sqrt{ab}$没有其他的那么显而易见，它是用x趋近于0时候的极�
 
 当且仅当a=b时等号成立。由此我们可以猜得当a≠b时，f(x)单调递增。那不妨令a=2，b=3画图来看看！
 
-![](https://cdn.nlark.com/yuque/0/2022/png/29762915/1659247591303-40cbde5d-4b1e-4b73-aaed-fa23b750f25d.png)![](https://cdn.nlark.com/yuque/0/2022/png/29762915/1659247774016-7f932e23-58ec-492f-9e0a-039709008e67.png)
+![](https://qus.moe/EXTRA-AM-GM-HM-QMInequality/image.png)![](https://qus.moe/EXTRA-AM-GM-HM-QMInequality/image%20(1).png)
 
 上文介绍过该图像的**可去间断点f(0)= $\sqrt{ab}$
 
@@ -33,11 +33,11 @@ $\sqrt{ab}$没有其他的那么显而易见，它是用x趋近于0时候的极�
 
 再举一例：
 
-![](https://cdn.nlark.com/yuque/0/2022/png/29762915/1659248086633-8d3d5c36-8307-47fa-a1f1-950a47cac2a7.png)![](https://cdn.nlark.com/yuque/0/2022/png/29762915/1659248154668-384935cc-07d4-46be-81e4-e52625989773.png)
+![](https://qus.moe/EXTRA-AM-GM-HM-QMInequality/image%20(2).png)![](https://qus.moe/EXTRA-AM-GM-HM-QMInequality/image%20(3).png)
 
 若a=b时，很显然f(x)恒=a=b，无单调性。上述不等式链全部取等，不妨令a=b=2画图来看一下！
 
-![](https://cdn.nlark.com/yuque/0/2022/png/29762915/1659248423748-fd31746a-fe8c-451e-a234-dc590336839b.png)![](https://cdn.nlark.com/yuque/0/2022/png/29762915/1659248391819-7e4cddc4-bcc8-4e39-947b-0517cd1dac94.png)
+![](https://qus.moe/EXTRA-AM-GM-HM-QMInequality/image%20(5).png)![](https://qus.moe/EXTRA-AM-GM-HM-QMInequality/image%20(6).png)
 延拓到n元，我们也学过下面的不等式链：
 
 $$H_n \le G_n \le A_n \le Q_n$$

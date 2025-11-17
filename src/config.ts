@@ -43,7 +43,7 @@ export const siteConfig: SiteConfig = {
 	favicon: [
 		// 留空数组以使用默认 favicon
 		{
-			src: "/favicon/kdla.jpg", // favicon 路径，相对于 /public 目录
+			src: "https://qus.moe/kdla.jpg", // favicon 路径，相对于 /public 目录
 			theme: "light", // （可选）'light' 或 'dark'，仅在有不同主题的 favicon 时设置
 			sizes: "32x32", // （可选）favicon 尺寸，仅在有不同尺寸的 favicon 时设置
 		},
@@ -81,7 +81,7 @@ export const friends: Friend[] = [
 ];
 
 export const profileConfig: ProfileConfig = {
-	avatar: "assets/images/kdl.jpg", // 相对于 /src 目录的路径。如果以 '/' 开头则相对于 /public 目录
+	avatar: "https://qus.moe/kdl.jpg", // 相对于 /src 目录的路径。如果以 '/' 开头则相对于 /public 目录
 	name: "Quasi2317",
 	bio: "喜欢折腾新事物的小同学(雾)",
 	links: [
