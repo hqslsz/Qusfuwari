@@ -5,7 +5,7 @@ import type {
 	ProfileConfig,
 	SiteConfig,
 } from "./types/config";
-import { LinkPreset, type Friend } from "./types/config";
+import { type Friend, LinkPreset } from "./types/config";
 
 export const siteConfig: SiteConfig = {
 	title: "QusMarsh",
@@ -43,7 +43,7 @@ export const siteConfig: SiteConfig = {
 	favicon: [
 		// 留空数组以使用默认 favicon
 		{
-			src: "https://qus.moe/kdla.jpg", // favicon 路径，相对于 /public 目录
+			src: "https://xn--wnu.icu/kdla.jpg", // favicon 路径，相对于 /public 目录
 			theme: "light", // （可选）'light' 或 'dark'，仅在有不同主题的 favicon 时设置
 			sizes: "32x32", // （可选）favicon 尺寸，仅在有不同尺寸的 favicon 时设置
 		},
@@ -66,22 +66,22 @@ export const navBarConfig: NavBarConfig = {
 };
 
 export const friends: Friend[] = [
-    {
-        name: "Fuwari",
-        url: "https://github.com/saicaca/fuwari",
-        avatar: "https://avatars.githubusercontent.com/u/25301741?v=4",
-        bio: "优雅的 Astro 博客主题"
-    },
-    {
-        name: "Astro",
-        url: "https://astro.build/",
-        avatar: "https://astro.build/favicon.svg",
-        bio: "The web framework for content-driven sites"
-    }
+	{
+		name: "Fuwari",
+		url: "https://github.com/saicaca/fuwari",
+		avatar: "https://avatars.githubusercontent.com/u/25301741?v=4",
+		bio: "优雅的 Astro 博客主题",
+	},
+	{
+		name: "Astro",
+		url: "https://astro.build/",
+		avatar: "https://astro.build/favicon.svg",
+		bio: "The web framework for content-driven sites",
+	},
 ];
 
 export const profileConfig: ProfileConfig = {
-	avatar: "https://qus.moe/kdl.jpg", // 相对于 /src 目录的路径。如果以 '/' 开头则相对于 /public 目录
+	avatar: "https://xn--wnu.icu/kdl.jpg", // 相对于 /src 目录的路径。如果以 '/' 开头则相对于 /public 目录
 	name: "Quasi2317",
 	bio: "喜欢折腾新事物的小同学(雾)",
 	links: [
