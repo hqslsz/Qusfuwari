@@ -3,13 +3,18 @@ title: DOTA2 棱彩宝石色号一览
 published: 2025-11-12
 description: DOTA2 棱彩宝石色号一览
 tags:
-  - 杂
+  - 囤积狂鼠
   - 艺术
-category: 杂
+category: 囤积狂鼠
 draft: false
 ---
 
 ---
+最近在画像素画，找棱彩宝石配色表时候发现以前的nga贴子没了
+
+所以自己写个博文给自己参考，好让我自己找起来方便点
+
+我很喜欢这套颜色
 
 DOTA2棱彩宝石：
 

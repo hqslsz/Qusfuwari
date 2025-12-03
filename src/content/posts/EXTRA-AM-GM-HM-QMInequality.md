@@ -1,7 +1,7 @@
 ---
 title: 由均值不等式到幂平均函数的性质研究
 published: 2022-07-31
-description: 远古时期(高二暑假)写得语雀笔记，被我翻出来了hhhh
+description: 远古时期(高二暑假)写的语雀笔记，被我翻出来了hhhh
 tags:
   - 高考数学邪修
 category: 高考
