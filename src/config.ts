@@ -102,6 +102,11 @@ export const profileConfig: ProfileConfig = {
 			icon: "fa6-brands:github",
 			url: "https://github.com/hqslsz",
 		},
+		{
+			name: "Pixiv",
+			icon: "simple-icons:pixiv",
+			url: "https://www.pixiv.net/users/97483441",
+		},
 	],
 };
 

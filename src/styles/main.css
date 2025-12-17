@@ -154,19 +154,8 @@
 :root {
     --card-bg: rgba(255, 255, 255, 0.95);
     --float-panel-bg: rgba(255, 255, 255, 0.98);
-    --card-bg-transparent: rgba(255, 255, 255, 0.75);
+    --card-bg-transparent: rgba(255, 255, 255, 0.80);
     --float-panel-bg-transparent: rgba(255, 255, 255, 0.85);
-}
-
-/* 为卡片添加毛玻璃效果 */
-body.bg-loaded .card-base,
-body.bg-loaded .float-panel {
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-}
-
-body.bg-loaded .card-base {
-    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 
