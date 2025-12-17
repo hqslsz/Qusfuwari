@@ -1,15 +1,15 @@
 ---
 interface ShowcaseItem {
-  title: string;
-  image: string;
-  description: string; // 悬停时显示的简短描述
-  details?: string; // 点击后模态窗口显示的详细描述
-  link?: string; // 可选的外部链接
+	title: string;
+	image: string;
+	description: string; // 悬停时显示的简短描述
+	details?: string; // 点击后模态窗口显示的详细描述
+	link?: string; // 可选的外部链接
 }
 
 interface Props {
-  title?: string;
-  items: ShowcaseItem[];
+	title?: string;
+	items: ShowcaseItem[];
 }
 
 const { title, items } = Astro.props;

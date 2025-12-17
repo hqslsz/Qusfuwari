@@ -48,9 +48,9 @@ export type Favicon = {
 export enum LinkPreset {
 	Home = 0,
 	Archive = 1,
-    About = 2,
-    Friends = 3,
-    Rice = 4,
+	About = 2,
+	Friends = 3,
+	Rice = 4,
 }
 
 export type NavBarLink = {
@@ -64,10 +64,10 @@ export type NavBarConfig = {
 };
 
 export type Friend = {
-    name: string;
-    url: string;
-    avatar?: string;
-    bio?: string;
+	name: string;
+	url: string;
+	avatar?: string;
+	bio?: string;
 };
 
 export type ProfileConfig = {

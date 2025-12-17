@@ -15,12 +15,12 @@ export const LinkPresets: { [key in LinkPreset]: NavBarLink } = {
 		name: i18n(I18nKey.archive),
 		url: "/archive/",
 	},
-    [LinkPreset.Friends]: {
-        name: i18n(I18nKey.friends),
-        url: "/friends/",
-    },
-    [LinkPreset.Rice]: {
-        name: i18n(I18nKey.rice),
-        url: "/rice/",
-    },
+	[LinkPreset.Friends]: {
+		name: i18n(I18nKey.friends),
+		url: "/friends/",
+	},
+	[LinkPreset.Rice]: {
+		name: i18n(I18nKey.rice),
+		url: "/rice/",
+	},
 };
