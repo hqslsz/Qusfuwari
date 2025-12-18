@@ -5,7 +5,7 @@ description: "不是人类能写出的逆天笔记"
 tags:
   - Markdown
   - 笔记
-category: 笔记
+category: 杂
 draft: false
 ---
 
@@ -161,4 +161,6 @@ $$
 \gamma \\
 \pi
 $$
+
+
 

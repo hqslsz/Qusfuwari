@@ -116,32 +116,56 @@ const bannerOffset =
 			offset = offset - offset % 4;
 			document.documentElement.style.setProperty('--banner-height-extend', `${offset}px`);
 
-			// 优化背景图加载
+			// 优化背景图加载 - 防止闪烁
 			const bgUrl = getComputedStyle(document.documentElement).getPropertyValue('--bg-url').trim();
 			const bgEnable = getComputedStyle(document.documentElement).getPropertyValue('--bg-enable').trim();
 			
 			if (bgUrl && bgUrl !== 'none' && bgEnable === '1') {
 				const urlMatch = bgUrl.match(/url\(["']?([^"')]+)["']?\)/);
 				if (urlMatch) {
+					let imageUrl = urlMatch[1];
+					
+					// 检测是否是随机API（每次返回不同图片的URL）
+					// 如果是随机API，使用sessionStorage缓存，避免每次重绘都请求新图片
+					const isRandomApi = imageUrl.includes('loliapi.com') || 
+					                    imageUrl.includes('api.') || 
+					                    imageUrl.includes('/random');
+					
+					if (isRandomApi) {
+						const cachedBg = sessionStorage.getItem('cached-bg-url');
+						if (cachedBg) {
+							// 使用缓存的图片URL
+							imageUrl = cachedBg;
+							document.documentElement.style.setProperty('--bg-url', `url("${imageUrl}")`);
+						}
+					}
+					
 					const img = new Image();
 					img.onload = function() {
+						// 如果是随机API，缓存实际加载的图片URL
+						if (isRandomApi && !sessionStorage.getItem('cached-bg-url')) {
+							sessionStorage.setItem('cached-bg-url', img.src);
+							document.documentElement.style.setProperty('--bg-url', `url("${img.src}")`);
+						}
 						document.body.classList.add('bg-loaded');
 						document.documentElement.style.setProperty('--card-bg', 'var(--card-bg-transparent)');
 						document.documentElement.style.setProperty('--float-panel-bg', 'var(--float-panel-bg-transparent)');
 					};
 					img.onerror = function() {
 						console.warn('Background image failed to load');
+						// 清除可能损坏的缓存
+						sessionStorage.removeItem('cached-bg-url');
 					};
-					img.src = urlMatch[1];
+					img.src = imageUrl;
 					
-					// 超时处理：2秒后强制启用透明效果
+					// 超时处理：3秒后强制启用透明效果（增加超时时间以适应网络延迟）
 					setTimeout(() => {
 						if (!document.body.classList.contains('bg-loaded')) {
 							document.body.classList.add('bg-loaded');
 							document.documentElement.style.setProperty('--card-bg', 'var(--card-bg-transparent)');
 							document.documentElement.style.setProperty('--float-panel-bg', 'var(--float-panel-bg-transparent)');
 						}
-					}, 2000);
+					}, 3000);
 				}
 			}
 		</script>
@@ -166,7 +190,7 @@ const bannerOffset =
 				--bg-opacity: var(--bg-opacity);
 			}
 			
-			/* 背景图配置 */
+			/* 背景图配置 - 优化渲染性能 */
 			body::before {
 				content: '';
 				position: fixed;
@@ -181,8 +205,11 @@ const bannerOffset =
 				opacity: 0;
 				pointer-events: none;
 				z-index: -1;
-				transition: opacity 0.3s ease;
-				will-change: opacity;
+				transition: opacity 0.5s ease;
+				/* 强制创建独立合成层，避免重绘影响其他元素 */
+				transform: translateZ(0);
+				backface-visibility: hidden;
+				-webkit-backface-visibility: hidden;
 			}
 			
 			body.bg-loaded::before {

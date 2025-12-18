@@ -4,7 +4,7 @@ published: 2022-07-31
 description: 远古时期(高二暑假)写的语雀笔记，被我翻出来了hhhh
 tags:
   - 高考数学邪修
-category: 高考
+category: 学
 draft: false
 ---
 
