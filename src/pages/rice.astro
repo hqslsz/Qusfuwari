@@ -15,30 +15,40 @@ if (!ricePost) {
 const { Content } = await render(ricePost);
 ---
 <MainGridLayout title={i18n(I18nKey.rice)} description={i18n(I18nKey.rice)}>
-    <!-- 超酷背景效果容器 -->
-    <div class="hero-background-section card-base">
-        <div class="hero-wrapper">
-            <div class="japanese" aria-hidden="true">
-                <!-- "米"字符号 -->
-                <div class="rice-symbol">「 米 」</div>
-                
-                <!-- 日文背景文字 -->
-                <div class="wisdoms">'ベンソンハウス-デイアングルオン：地面にスニーカー。カメラが上に移動して、バリーベンソンのベッドルームアングルを表示します。バリーの手がクローゼットの中でさまざまなセーターをめくっています。バリーイエローブラック、イエローブラック、イエローブラック、イエローブラック、イエローブラック、イエローブラック...うーん、ブラックとイエロー...アングル：バリーが選んだセーターを着て、鏡を見て。バリー（続き）ええ、少し振りましょう彼は黒と黄色のものを選びます。彼はそれから流しに行き、蜂蜜の容器を外し、髪に蜂蜜を入れます。彼は口の中でいくつか潮吹きしてうがいをします。それから彼はボトルの蓋を外し、デオドラントのようにいくつかを転がします。カット'</div>
+    <!-- 整体容器，避免 gap 间距 -->
+    <div class="rice-container">
+        <!-- 超酷背景效果容器 -->
+        <div class="hero-background-section card-base">
+            <div class="hero-wrapper">
+                <div class="japanese" aria-hidden="true">
+                    <!-- "米"字符号 -->
+                    <div class="rice-symbol">「 米 」</div>
+                    
+                    <!-- 日文背景文字 -->
+                    <div class="wisdoms">'ベンソンハウス-デイアングルオン：地面にスニーカー。カメラが上に移動して、バリーベンソンのベッドルームアングルを表示します。バリーの手がクローゼットの中でさまざまなセーターをめくっています。バリーイエローブラック、イエローブラック、イエローブラック、イエローブラック、イエローブラック、イエローブラック...うーん、ブラックとイエロー...アングル：バリーが選んだセーターを着て、鏡を見て。バリー（続き）ええ、少し振りましょう彼は黒と黄色のものを選びます。彼はそれから流しに行き、蜂蜜の容器を外し、髪に蜂蜜を入れます。彼は口の中でいくつか潮吹きしてうがいをします。それから彼はボトルの蓋を外し、デオドラントのようにいくつかを転がします。カット'</div>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- 内容卡片 -->
-    <div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative min-h-32 content-card">
-        <div class="card-base z-10 px-9 py-6 relative w-full ">
-            <Markdown class="mt-2">
-                <Content />
-            </Markdown>
+        <!-- 内容卡片 -->
+        <div class="flex w-full overflow-hidden relative min-h-32 content-card">
+            <div class="card-base z-10 px-9 py-6 relative w-full rounded-t-none">
+                <Markdown class="mt-2">
+                    <Content />
+                </Markdown>
+            </div>
         </div>
     </div>
 </MainGridLayout>
 
 <style>
+    /* 整体容器 */
+    .rice-container {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+
     /* 背景容器 */
     .hero-background-section {
         position: relative;
@@ -49,8 +59,8 @@ const { Content } = await render(ricePost);
         align-items: center;
         justify-content: center;
         overflow: hidden;
-        margin-bottom: 2rem;
-        border-radius: var(--radius-large);
+        margin-bottom: 0;
+        border-radius: var(--radius-large) var(--radius-large) 0 0;
     }
 
     /* Hero包装器 */
@@ -139,7 +149,7 @@ const { Content } = await render(ricePost);
 
     /* 内容卡片间距 */
     .content-card {
-        margin-top: 1rem;
+        margin-top: 0;
     }
 
     /* 深色主题适配 */
