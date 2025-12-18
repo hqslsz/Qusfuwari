@@ -70,10 +70,10 @@ export const navBarConfig: NavBarConfig = {
 export const profileConfig: ProfileConfig = {
 	avatar: "https://xn--wnu.icu/kdl.jpg", // 相对于 /src 目录的路径。如果以 '/' 开头则相对于 /public 目录
 	name: "Quasi2317",
-	bio: "想要一种帅的感觉",
+	bio: "天下大统",
 	links: [
 		{
-			name: "Twitter",
+			name: "bilibili",
 			icon: "fa6-brands:bilibili", // 图标代码可访问 https://icones.js.org/
 			// 如未包含对应图标集需安装：
 			// `pnpm add @iconify-json/<icon-set-name>`
