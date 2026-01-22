@@ -94,9 +94,17 @@ const bannerOffset =
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
 		
-		<!-- 霞鹜文楷 - 中文手写风格字体 -->
+		<!-- 霞鹜文楷 - 中文手写风格字体（优化加载性能） -->
 		<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+		<link rel="preload" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.1.0/lxgwwenkaiscreen.woff2" as="font" type="font/woff2" crossorigin />
 		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.1.0/style.css" />
+		<style>
+			/* 确保字体加载时显示回退字体，避免FOIT（Flash of Invisible Text）*/
+			@font-face {
+				font-family: 'LXGW WenKai Screen';
+				font-display: swap;
+			}
+		</style>
 		{favicons.map(favicon => (
 			<link rel="icon"
 				  href={favicon.src.startsWith('/') ? url(favicon.src) : favicon.src}
@@ -107,67 +115,90 @@ const bannerOffset =
 
 		<!-- 初始化设置 -->
 		<script is:inline define:vars={{BANNER_HEIGHT_EXTEND, PAGE_WIDTH, configHue}}>
-			// 加载色调设置
-			const hue = localStorage.getItem('hue') || configHue;
-			document.documentElement.style.setProperty('--hue', hue);
+			// 性能优化：批量读取CSS变量，避免多次getComputedStyle调用
+			(function() {
+				// 批量读取阶段
+				const computedStyle = getComputedStyle(document.documentElement);
+				const bgUrl = computedStyle.getPropertyValue('--bg-url').trim();
+				const bgEnable = computedStyle.getPropertyValue('--bg-enable').trim();
+				const hue = localStorage.getItem('hue') || configHue;
+				const viewportHeight = window.innerHeight;
+				
+				// 批量写入阶段（使用requestAnimationFrame避免强制同步布局）
+				requestAnimationFrame(() => {
+					// 加载色调设置
+					document.documentElement.style.setProperty('--hue', hue);
 
-			// 计算banner高度
-			let offset = Math.floor(window.innerHeight * (BANNER_HEIGHT_EXTEND / 100));
-			offset = offset - offset % 4;
-			document.documentElement.style.setProperty('--banner-height-extend', `${offset}px`);
+					// 计算banner高度
+					let offset = Math.floor(viewportHeight * (BANNER_HEIGHT_EXTEND / 100));
+					offset = offset - offset % 4;
+					document.documentElement.style.setProperty('--banner-height-extend', `${offset}px`);
+				});
 
-			// 优化背景图加载 - 防止闪烁
-			const bgUrl = getComputedStyle(document.documentElement).getPropertyValue('--bg-url').trim();
-			const bgEnable = getComputedStyle(document.documentElement).getPropertyValue('--bg-enable').trim();
-			
-			if (bgUrl && bgUrl !== 'none' && bgEnable === '1') {
-				const urlMatch = bgUrl.match(/url\(["']?([^"')]+)["']?\)/);
-				if (urlMatch) {
-					let imageUrl = urlMatch[1];
-					
-					// 检测是否是随机API（每次返回不同图片的URL）
-					// 如果是随机API，使用sessionStorage缓存，避免每次重绘都请求新图片
-					const isRandomApi = imageUrl.includes('loliapi.com') || 
-					                    imageUrl.includes('api.') || 
-					                    imageUrl.includes('/random');
-					
-					if (isRandomApi) {
-						const cachedBg = sessionStorage.getItem('cached-bg-url');
-						if (cachedBg) {
-							// 使用缓存的图片URL
-							imageUrl = cachedBg;
-							document.documentElement.style.setProperty('--bg-url', `url("${imageUrl}")`);
+				// 优化背景图加载 - 防止闪烁
+				if (bgUrl && bgUrl !== 'none' && bgEnable === '1') {
+					const urlMatch = bgUrl.match(/url\(["']?([^"')]+)["']?\)/);
+					if (urlMatch) {
+						let imageUrl = urlMatch[1];
+						
+						// 检测是否是随机API（每次返回不同图片的URL）
+						// 如果是随机API，使用sessionStorage缓存，避免每次重绘都请求新图片
+						const isRandomApi = imageUrl.includes('loliapi.com') || 
+						                    imageUrl.includes('api.') || 
+						                    imageUrl.includes('/random');
+						
+						if (isRandomApi) {
+							const cachedBg = sessionStorage.getItem('cached-bg-url');
+							const cachedBgTime = sessionStorage.getItem('cached-bg-time');
+							// 缓存有效期：1小时（解决30秒TTL问题）
+							const cacheMaxAge = 60 * 60 * 1000;
+							const isCacheValid = cachedBg && cachedBgTime && 
+								(Date.now() - parseInt(cachedBgTime, 10)) < cacheMaxAge;
+							
+							if (isCacheValid) {
+								// 使用缓存的图片URL
+								imageUrl = cachedBg;
+								requestAnimationFrame(() => {
+									document.documentElement.style.setProperty('--bg-url', `url("${imageUrl}")`);
+								});
+							}
 						}
+						
+						const img = new Image();
+						img.onload = function() {
+							requestAnimationFrame(() => {
+								// 如果是随机API，缓存实际加载的图片URL
+								if (isRandomApi && !sessionStorage.getItem('cached-bg-url')) {
+									sessionStorage.setItem('cached-bg-url', img.src);
+									sessionStorage.setItem('cached-bg-time', Date.now().toString());
+									document.documentElement.style.setProperty('--bg-url', `url("${img.src}")`);
+								}
+								document.body.classList.add('bg-loaded');
+								document.documentElement.style.setProperty('--card-bg', 'var(--card-bg-transparent)');
+								document.documentElement.style.setProperty('--float-panel-bg', 'var(--float-panel-bg-transparent)');
+							});
+						};
+						img.onerror = function() {
+							console.warn('Background image failed to load');
+							// 清除可能损坏的缓存
+							sessionStorage.removeItem('cached-bg-url');
+							sessionStorage.removeItem('cached-bg-time');
+						};
+						img.src = imageUrl;
+						
+						// 超时处理：3秒后强制启用透明效果
+						setTimeout(() => {
+							if (!document.body.classList.contains('bg-loaded')) {
+								requestAnimationFrame(() => {
+									document.body.classList.add('bg-loaded');
+									document.documentElement.style.setProperty('--card-bg', 'var(--card-bg-transparent)');
+									document.documentElement.style.setProperty('--float-panel-bg', 'var(--float-panel-bg-transparent)');
+								});
+							}
+						}, 3000);
 					}
-					
-					const img = new Image();
-					img.onload = function() {
-						// 如果是随机API，缓存实际加载的图片URL
-						if (isRandomApi && !sessionStorage.getItem('cached-bg-url')) {
-							sessionStorage.setItem('cached-bg-url', img.src);
-							document.documentElement.style.setProperty('--bg-url', `url("${img.src}")`);
-						}
-						document.body.classList.add('bg-loaded');
-						document.documentElement.style.setProperty('--card-bg', 'var(--card-bg-transparent)');
-						document.documentElement.style.setProperty('--float-panel-bg', 'var(--float-panel-bg-transparent)');
-					};
-					img.onerror = function() {
-						console.warn('Background image failed to load');
-						// 清除可能损坏的缓存
-						sessionStorage.removeItem('cached-bg-url');
-					};
-					img.src = imageUrl;
-					
-					// 超时处理：3秒后强制启用透明效果（增加超时时间以适应网络延迟）
-					setTimeout(() => {
-						if (!document.body.classList.contains('bg-loaded')) {
-							document.body.classList.add('bg-loaded');
-							document.documentElement.style.setProperty('--card-bg', 'var(--card-bg-transparent)');
-							document.documentElement.style.setProperty('--float-panel-bg', 'var(--float-panel-bg-transparent)');
-						}
-					}, 3000);
 				}
-			}
+			})();
 		</script>
 		<style define:vars={{
 			configHue,
@@ -527,49 +558,71 @@ if (window?.swup?.hooks) {
 let backToTopBtn = document.getElementById('back-to-top-btn');
 let toc = document.getElementById('toc-wrapper');
 let navbar = document.getElementById('navbar-wrapper')
+
+// 性能优化：使用节流和批量DOM操作避免Layout Thrashing
+let scrollTicking = false;
 function scrollFunction() {
-	let bannerHeight = window.innerHeight * (BANNER_HEIGHT / 100)
-
-	if (backToTopBtn) {
-		if (document.body.scrollTop > bannerHeight || document.documentElement.scrollTop > bannerHeight) {
-			backToTopBtn.classList.remove('hide')
-		} else {
-			backToTopBtn.classList.add('hide')
+	if (scrollTicking) return;
+	scrollTicking = true;
+	
+	requestAnimationFrame(() => {
+		// 批量读取所有需要的布局属性（避免读写交错）
+		const scrollTop = document.body.scrollTop || document.documentElement.scrollTop;
+		const viewportHeight = window.innerHeight;
+		const viewportWidth = window.innerWidth;
+		const isHome = document.body.classList.contains('lg:is-home');
+		
+		// 预计算阈值
+		const bannerHeightPercent = (bannerEnabled && isHome && viewportWidth >= 1024) 
+			? BANNER_HEIGHT_HOME 
+			: BANNER_HEIGHT;
+		const bannerHeightPx = viewportHeight * (bannerHeightPercent / 100);
+		const NAVBAR_HEIGHT = 72;
+		const MAIN_PANEL_EXCESS_HEIGHT = MAIN_PANEL_OVERLAPS_BANNER_HEIGHT * 16;
+		const navbarThreshold = viewportHeight * (bannerHeightPercent / 100) - NAVBAR_HEIGHT - MAIN_PANEL_EXCESS_HEIGHT - 16;
+		
+		// 批量写入DOM（所有样式修改放在一起）
+		if (backToTopBtn) {
+			if (scrollTop > bannerHeightPx) {
+				backToTopBtn.classList.remove('hide');
+			} else {
+				backToTopBtn.classList.add('hide');
+			}
 		}
-	}
 
-	if (bannerEnabled && toc) {
-		if (document.body.scrollTop > bannerHeight || document.documentElement.scrollTop > bannerHeight) {
-			toc.classList.remove('toc-hide')
-		} else {
-			toc.classList.add('toc-hide')
+		if (bannerEnabled && toc) {
+			if (scrollTop > bannerHeightPx) {
+				toc.classList.remove('toc-hide');
+			} else {
+				toc.classList.add('toc-hide');
+			}
 		}
-	}
 
-	if (!bannerEnabled) return
-	if (navbar) {
-		const NAVBAR_HEIGHT = 72
-		const MAIN_PANEL_EXCESS_HEIGHT = MAIN_PANEL_OVERLAPS_BANNER_HEIGHT * 16			// The height the main panel overlaps the banner
-
-		let bannerHeight = BANNER_HEIGHT
-		if (document.body.classList.contains('lg:is-home') && window.innerWidth >= 1024) {
-			bannerHeight = BANNER_HEIGHT_HOME
+		if (bannerEnabled && navbar) {
+			if (scrollTop >= navbarThreshold) {
+				navbar.classList.add('navbar-hidden');
+			} else {
+				navbar.classList.remove('navbar-hidden');
+			}
 		}
-		let threshold = window.innerHeight * (bannerHeight / 100) - NAVBAR_HEIGHT - MAIN_PANEL_EXCESS_HEIGHT - 16
-		if (document.body.scrollTop >= threshold || document.documentElement.scrollTop >= threshold) {
-			navbar.classList.add('navbar-hidden')
-		} else {
-			navbar.classList.remove('navbar-hidden')
-		}
-	}
+		
+		scrollTicking = false;
+	});
 }
 window.onscroll = scrollFunction
 
+// 性能优化：resize事件使用防抖
+let resizeTimeout: ReturnType<typeof setTimeout>;
 window.onresize = () => {
-	// calculate the --banner-height-extend, which needs to be a multiple of 4 to avoid blurry text
-	let offset = Math.floor(window.innerHeight * (BANNER_HEIGHT_EXTEND / 100));
-	offset = offset - offset % 4;
-	document.documentElement.style.setProperty('--banner-height-extend', `${offset}px`);
+	clearTimeout(resizeTimeout);
+	resizeTimeout = setTimeout(() => {
+		requestAnimationFrame(() => {
+			// calculate the --banner-height-extend, which needs to be a multiple of 4 to avoid blurry text
+			let offset = Math.floor(window.innerHeight * (BANNER_HEIGHT_EXTEND / 100));
+			offset = offset - offset % 4;
+			document.documentElement.style.setProperty('--banner-height-extend', `${offset}px`);
+		});
+	}, 100);
 }
 
 </script>

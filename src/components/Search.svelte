@@ -142,10 +142,12 @@ $: if (initialized && keywordMobile) {
 <div id="search-bar" class="hidden lg:flex transition-all items-center h-11 mr-2 rounded-lg
       bg-black/[0.04] hover:bg-black/[0.06] focus-within:bg-black/[0.06]
 ">
-    <Icon icon="material-symbols:search" class="absolute text-[1.25rem] pointer-events-none ml-3 transition my-auto text-black/30"></Icon>
-    <input placeholder="{i18n(I18nKey.search)}" bind:value={keywordDesktop} on:focus={() => search(keywordDesktop, true)}
+    <Icon icon="material-symbols:search" class="absolute text-[1.25rem] pointer-events-none ml-3 transition my-auto text-black/30" aria-hidden="true"></Icon>
+    <label for="search-input-desktop" class="sr-only">搜索</label>
+    <input id="search-input-desktop" placeholder="{i18n(I18nKey.search)}" bind:value={keywordDesktop} on:focus={() => search(keywordDesktop, true)}
            class="transition-all pl-10 text-sm bg-transparent outline-0
          h-full w-40 active:w-60 focus:w-60 text-black/50"
+           aria-label="搜索内容"
     >
 </div>
 
@@ -163,10 +165,12 @@ top-20 left-4 md:left-[unset] right-4 shadow-2xl rounded-2xl p-2">
     <div id="search-bar-inside" class="flex relative lg:hidden transition-all items-center h-11 rounded-xl
       bg-black/[0.04] hover:bg-black/[0.06] focus-within:bg-black/[0.06]
   ">
-        <Icon icon="material-symbols:search" class="absolute text-[1.25rem] pointer-events-none ml-3 transition my-auto text-black/30"></Icon>
-        <input placeholder="Search" bind:value={keywordMobile}
+        <Icon icon="material-symbols:search" class="absolute text-[1.25rem] pointer-events-none ml-3 transition my-auto text-black/30" aria-hidden="true"></Icon>
+        <label for="search-input-mobile" class="sr-only">搜索</label>
+        <input id="search-input-mobile" placeholder="Search" bind:value={keywordMobile}
                class="pl-10 absolute inset-0 text-sm bg-transparent outline-0
                focus:w-60 text-black/50"
+               aria-label="搜索内容"
         >
     </div>
 
@@ -174,9 +178,10 @@ top-20 left-4 md:left-[unset] right-4 shadow-2xl rounded-2xl p-2">
     {#each result as item}
         <a href={item.url}
            class="transition first-of-type:mt-2 lg:first-of-type:mt-0 group block
-       rounded-xl text-lg px-3 py-2 hover:bg-[var(--btn-plain-bg-hover)] active:bg-[var(--btn-plain-bg-active)]">
+       rounded-xl text-lg px-3 py-2 hover:bg-[var(--btn-plain-bg-hover)] active:bg-[var(--btn-plain-bg-active)]"
+           aria-label="阅读文章: {item.meta.title}">
             <div class="transition text-90 inline-flex font-bold group-hover:text-[var(--primary)]">
-                {item.meta.title}<Icon icon="fa6-solid:chevron-right" class="transition text-[0.75rem] translate-x-1 my-auto text-[var(--primary)]"></Icon>
+                {item.meta.title}<Icon icon="fa6-solid:chevron-right" class="transition text-[0.75rem] translate-x-1 my-auto text-[var(--primary)]" aria-hidden="true"></Icon>
             </div>
             <div class="transition text-sm text-50">
                 {@html item.excerpt}
@@ -192,5 +197,17 @@ top-20 left-4 md:left-[unset] right-4 shadow-2xl rounded-2xl p-2">
   .search-panel {
     max-height: calc(100vh - 100px);
     overflow-y: auto;
+  }
+  /* Screen reader only - 视觉隐藏但屏幕阅读器可访问 */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
   }
 </style>

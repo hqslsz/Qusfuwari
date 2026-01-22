@@ -98,29 +98,44 @@ class TableOfContents extends HTMLElement {
     toggleActiveHeading = () => {
         let i = this.active.length - 1;
         let min = this.active.length - 1, max = -1;
+        
+        // 批量收集需要修改的类名变更
+        const toRemove: HTMLAnchorElement[] = [];
+        const toAdd: HTMLAnchorElement[] = [];
+        
         while (i >= 0 && !this.active[i]) {
-            this.tocEntries[i].classList.remove(this.visibleClass);
+            toRemove.push(this.tocEntries[i]);
             i--;
         }
         while (i >= 0 && this.active[i]) {
-            this.tocEntries[i].classList.add(this.visibleClass);
+            toAdd.push(this.tocEntries[i]);
             min = Math.min(min, i);
             max = Math.max(max, i);
             i--;
         }
         while (i >= 0) {
-            this.tocEntries[i].classList.remove(this.visibleClass);
+            toRemove.push(this.tocEntries[i]);
             i--;
         }
+        
+        // 批量读取布局属性（避免读写交错导致的Layout Thrashing）
+        let indicatorStyle = '';
         if (min > max) {
-            this.activeIndicator?.setAttribute("style", `opacity: 0`);
+            indicatorStyle = `opacity: 0`;
         } else {
-            let parentOffset = this.tocEl?.getBoundingClientRect().top || 0;
-            let scrollOffset = this.tocEl?.scrollTop || 0;
-            let top = this.tocEntries[min].getBoundingClientRect().top - parentOffset + scrollOffset;
-            let bottom = this.tocEntries[max].getBoundingClientRect().bottom - parentOffset + scrollOffset;
-            this.activeIndicator?.setAttribute("style", `top: ${top}px; height: ${bottom - top}px`);
+            const parentOffset = this.tocEl?.getBoundingClientRect().top || 0;
+            const scrollOffset = this.tocEl?.scrollTop || 0;
+            const topRect = this.tocEntries[min].getBoundingClientRect();
+            const bottomRect = this.tocEntries[max].getBoundingClientRect();
+            const top = topRect.top - parentOffset + scrollOffset;
+            const bottom = bottomRect.bottom - parentOffset + scrollOffset;
+            indicatorStyle = `top: ${top}px; height: ${bottom - top}px`;
         }
+        
+        // 批量写入DOM（所有样式修改放在一起）
+        toRemove.forEach(el => el.classList.remove(this.visibleClass));
+        toAdd.forEach(el => el.classList.add(this.visibleClass));
+        this.activeIndicator?.setAttribute("style", indicatorStyle);
     };
 
     scrollToActiveHeading = () => {
@@ -163,16 +178,20 @@ class TableOfContents extends HTMLElement {
     fallback = () => {
         if (!this.sections.length) return;
 
-        for (let i = 0; i < this.sections.length; i++) {
-            let offsetTop = this.sections[i].getBoundingClientRect().top;
-            let offsetBottom = this.sections[i].getBoundingClientRect().bottom;
+        // 批量读取所有需要的布局信息（避免循环中的Layout Thrashing）
+        const viewportHeight = window.innerHeight;
+        const rects = this.sections.map(section => section.getBoundingClientRect());
+        
+        // 基于预读取的数据进行判断
+        for (let i = 0; i < rects.length; i++) {
+            const { top: offsetTop, bottom: offsetBottom } = rects[i];
 
-            if (this.isInRange(offsetTop, 0, window.innerHeight)
-                || this.isInRange(offsetBottom, 0, window.innerHeight)
-                || (offsetTop < 0 && offsetBottom > window.innerHeight)) {                    
+            if (this.isInRange(offsetTop, 0, viewportHeight)
+                || this.isInRange(offsetBottom, 0, viewportHeight)
+                || (offsetTop < 0 && offsetBottom > viewportHeight)) {                    
                 this.markActiveHeading(i);
             }
-            else if (offsetTop > window.innerHeight) break;
+            else if (offsetTop > viewportHeight) break;
         }
     };
 

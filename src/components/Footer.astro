@@ -12,16 +12,16 @@ const currentYear = new Date().getFullYear();
 <div class="transition border-dashed border-[oklch(85%_0.01_var(--hue))] rounded-2xl mb-12 flex flex-col items-center justify-center px-6">
     <div class="transition text-50 text-sm text-center">
         &copy; <span id="copyright-year">{currentYear}</span> {profileConfig.name}. All Rights Reserved. /
-        <a class="transition link text-[var(--primary)] font-medium" target="_blank" href={url('rss.xml')}>RSS</a> /
-        <a class="transition link text-[var(--primary)] font-medium" target="_blank" href={url('sitemap-index.xml')}>Sitemap</a>
+        <a class="transition link text-[var(--primary)] font-medium" target="_blank" rel="noopener noreferrer" href={url('rss.xml')} aria-label="RSS订阅">RSS</a> /
+        <a class="transition link text-[var(--primary)] font-medium" target="_blank" rel="noopener noreferrer" href={url('sitemap-index.xml')} aria-label="网站地图">Sitemap</a>
         <div>
             Powered by
-            <a class="transition link text-[var(--primary)] font-medium" target="_blank" href="https://astro.build">Astro</a> &
-            <a class="transition link text-[var(--primary)] font-medium" target="_blank" href="https://github.com/saicaca/fuwari">Fuwari</a>
+            <a class="transition link text-[var(--primary)] font-medium" target="_blank" rel="noopener noreferrer" href="https://astro.build" aria-label="Astro框架官网">Astro</a> &
+            <a class="transition link text-[var(--primary)] font-medium" target="_blank" rel="noopener noreferrer" href="https://github.com/saicaca/fuwari" aria-label="Fuwari主题GitHub仓库">Fuwari</a>
         </div>
         <div class="flex items-center justify-center gap-2 text-base mt-1">
-            <img src="https://xn--wnu.icu/icp.gov.moe.png" alt="萌ICP备" class="h-6 w-6 inline-block" />
-            <a class="transition link text-[var(--primary)] font-bold" target="_blank" href="https://icp.gov.moe/?keyword=20252317">萌ICP备20252317号</a>
+            <img src="https://xn--wnu.icu/icp.gov.moe.png" alt="萌ICP备图标" class="h-6 w-6 inline-block" loading="lazy" />
+            <a class="transition link text-[var(--primary)] font-bold" target="_blank" rel="noopener noreferrer" href="https://icp.gov.moe/?keyword=20252317" aria-label="萌ICP备案信息">萌ICP备20252317号</a>
         </div>
     </div>
 </div>

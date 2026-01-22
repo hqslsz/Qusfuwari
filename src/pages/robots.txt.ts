@@ -1,11 +1,11 @@
 import type { APIRoute } from "astro";
 
-const robotsTxt = `
-User-agent: *
+// 修复robots.txt语法 - 确保格式符合标准
+const robotsTxt = `User-agent: *
+Allow: /
 Disallow: /_astro/
 
-Sitemap: ${new URL("sitemap-index.xml", import.meta.env.SITE).href}
-`.trim();
+Sitemap: ${new URL("sitemap-index.xml", import.meta.env.SITE).href}`;
 
 export const GET: APIRoute = () => {
 	return new Response(robotsTxt, {

@@ -68,7 +68,7 @@ export const navBarConfig: NavBarConfig = {
 // 友链配置已移至 src/friends.ts
 
 export const profileConfig: ProfileConfig = {
-	avatar: "https://xn--wnu.icu/kdl.jpg", // 相对于 /src 目录的路径。如果以 '/' 开头则相对于 /public 目录
+	avatar: "assets/images/kdl.jpg", // 相对于 /src 目录的路径。如果以 '/' 开头则相对于 /public 目录（已本地化优化）
 	name: "Quasi2317",
 	bio: "天下大统",
 	links: [
