@@ -1,0 +1,759 @@
+---
+/**
+ * 朋友圈动态卡片组件
+ * 展示一条说说/动态，支持文字、图片、时间、位置等信息
+ * 图片支持1-9张的九宫格布局，点击可预览大图
+ * 集成 Giscus 评论和 Reactions 点赞功能
+ */
+export interface Props {
+	id: string;
+	content: string;
+	published: Date;
+	images?: string[];
+	tags?: string[];
+	location?: string;
+	mood?: string;
+	index?: number; // 用于计算卡片的hue色调
+}
+
+const {
+	id,
+	content,
+	published,
+	images = [],
+	tags = [],
+	location,
+	index = 0,
+} = Astro.props;
+
+// 格式化日期
+const formatDate = (date: Date) => {
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, "0");
+	const day = String(date.getDate()).padStart(2, "0");
+	return `${year}年${month}月${day}日`;
+};
+
+// 计算相对时间
+const getRelativeTime = (date: Date) => {
+	const now = new Date();
+	const diff = now.getTime() - date.getTime();
+	const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+	if (days === 0) return "今天";
+	if (days === 1) return "昨天";
+	if (days < 7) return `${days}天前`;
+	if (days < 30) return `${Math.floor(days / 7)}周前`;
+	if (days < 365) return `${Math.floor(days / 30)}个月前`;
+	return `${Math.floor(days / 365)}年前`;
+};
+
+// 处理内容中的换行符
+const processContent = (text: string) => {
+	return text
+		.split("\n")
+		.map((line) => line.trim())
+		.filter(Boolean);
+};
+
+const contentLines = processContent(content);
+const imageCount = images.length;
+const isLongContent = contentLines.length > 5 || content.length > 300;
+
+// 计算九宫格布局类型
+const getGridLayout = (count: number) => {
+	if (count === 1) return "single";
+	if (count === 2 || count === 4) return "two-col";
+	return "three-col";
+};
+
+const gridLayout = getGridLayout(imageCount);
+
+// 根据索引生成不同的hue偏移值，让每张卡片有微妙的色彩变化
+// 使用黄金比例分割来确保色彩分布均匀
+const hueOffset = (index * 137.508) % 360; // 黄金角度 ≈ 137.508°
+
+// 生成说说标题（用于 Giscus Discussion 显示）
+const momentTitle = content.substring(0, 50) + (content.length > 50 ? '...' : '');
+---
+
+<div 
+  class="moment-card card-base overflow-hidden" 
+  data-moment-id={id}
+  style={`--card-hue-offset: ${hueOffset};`}
+>
+  <!-- 顶部纯色装饰条 -->
+  <div class="moment-hue-bar"></div>
+  
+  <!-- 内容区域 -->
+  <div class="moment-content p-4 md:p-5">
+    <!-- 文字内容 -->
+    <div class="moment-text mb-3">
+      <p 
+        id={`moment-body-${id}`}
+        class:list={[
+          "moment-body text-neutral-800 dark:text-neutral-200 leading-relaxed whitespace-pre-wrap",
+          { "line-clamp-5": isLongContent }
+        ]}
+        data-full-content={content}
+      >
+        {contentLines.map((line, index) => (
+          <Fragment>
+            {line}
+            {index < contentLines.length - 1 && <br />}
+          </Fragment>
+        ))}
+      </p>
+      {isLongContent && (
+        <button 
+          class="expand-btn text-sm text-[var(--primary)] hover:text-[var(--primary-dark)] mt-2 cursor-pointer transition"
+          data-target={`moment-body-${id}`}
+          data-expanded="false"
+        >
+          展开全文
+        </button>
+      )}
+    </div>
+
+    <!-- 图片区域 - 九宫格布局 -->
+    {images.length > 0 && (
+      <div 
+        class="moment-images mb-3" 
+        data-count={imageCount}
+        data-layout={gridLayout}
+        data-moment-id={id}
+      >
+        {images.map((img, index) => (
+          <div 
+            class="image-item" 
+            data-index={index}
+            data-src={img}
+            role="button"
+            tabindex="0"
+            aria-label={`查看图片 ${index + 1}`}
+          >
+            <img 
+              src={img} 
+              alt={`动态图片 ${index + 1}`}
+              class="w-full h-full object-cover"
+              loading="lazy"
+              decoding="async"
+            />
+            {/* 图片数量指示器 - 仅在超过9张时显示 */}
+            {imageCount > 9 && index === 8 && (
+              <div class="image-count-overlay">
+                +{imageCount - 9}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    )}
+
+    <!-- 标签 -->
+    {tags.length > 0 && (
+      <div class="moment-tags flex flex-wrap gap-2 mb-3">
+        {tags.map(tag => (
+          <span class="tag px-2 py-1 text-xs rounded-full bg-[var(--btn-regular-bg)] text-[var(--btn-content)]">
+            #{tag}
+          </span>
+        ))}
+      </div>
+    )}
+  </div>
+
+  <!-- 底部信息栏 -->
+  <div class="moment-footer px-4 md:px-5 pb-4 flex items-center justify-between text-sm text-neutral-500 dark:text-neutral-400">
+    <div class="flex items-center gap-4">
+      <!-- 时间 -->
+      <time class="flex items-center gap-1" datetime={published.toISOString()}>
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        <span>{formatDate(published)}</span>
+        <span class="text-neutral-400 dark:text-neutral-500">· {getRelativeTime(published)}</span>
+      </time>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <!-- 位置 -->
+      {location && (
+        <span class="flex items-center gap-1">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+            <circle cx="12" cy="10" r="3"></circle>
+          </svg>
+          <span>{location}</span>
+        </span>
+      )}
+    </div>
+  </div>
+</div>
+
+<style>
+  .moment-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+  }
+
+  .moment-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  }
+
+  /* 顶部纯色hue装饰条 */
+  .moment-hue-bar {
+    height: 4px;
+    background-color: oklch(0.70 0.14 calc(var(--hue) + var(--card-hue-offset, 0)));
+    transition: height 0.2s ease;
+  }
+
+  .moment-card:hover .moment-hue-bar {
+    height: 5px;
+  }
+
+  .moment-body {
+    font-family: 'LXGW WenKai Screen', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.8;
+    word-break: break-word;
+  }
+
+  .line-clamp-5 {
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* ===== 九宫格图片布局 ===== */
+  .moment-images {
+    display: grid;
+    gap: 4px;
+    max-width: 100%;
+  }
+
+  /* 单张图片 - 自适应尺寸 */
+  .moment-images[data-count="1"] {
+    display: inline-block;
+  }
+
+  .moment-images[data-count="1"] .image-item {
+    aspect-ratio: unset;
+    max-width: 280px;
+  }
+
+  .moment-images[data-count="1"] .image-item img {
+    max-width: 280px;
+    max-height: 280px;
+    min-width: 180px;
+    min-height: 180px;
+    width: auto;
+    height: auto;
+    aspect-ratio: unset;
+    border-radius: 0.5rem;
+  }
+
+  /* 2张图片 - 两列布局 */
+  .moment-images[data-count="2"] {
+    grid-template-columns: repeat(2, 180px);
+  }
+
+  /* 3张图片 - 三列布局 */
+  .moment-images[data-count="3"] {
+    grid-template-columns: repeat(3, 132px);
+  }
+
+  /* 4张图片 - 两列两行布局 */
+  .moment-images[data-count="4"] {
+    grid-template-columns: repeat(2, 180px);
+  }
+
+  /* 5张图片 - 上2下3布局 */
+  .moment-images[data-count="5"] {
+    grid-template-columns: repeat(6, 1fr);
+    max-width: 408px;
+  }
+
+  .moment-images[data-count="5"] .image-item:nth-child(1),
+  .moment-images[data-count="5"] .image-item:nth-child(2) {
+    grid-column: span 3;
+  }
+
+  .moment-images[data-count="5"] .image-item:nth-child(n+3) {
+    grid-column: span 2;
+  }
+
+  /* 6张图片 - 标准两行三列 */
+  .moment-images[data-count="6"] {
+    grid-template-columns: repeat(3, 132px);
+  }
+
+  /* 7张图片 - 上1大图，下6小图 */
+  .moment-images[data-count="7"] {
+    grid-template-columns: repeat(3, 132px);
+  }
+
+  /* 8张图片 - 上2下6布局 */
+  .moment-images[data-count="8"] {
+    grid-template-columns: repeat(6, 1fr);
+    max-width: 408px;
+  }
+
+  .moment-images[data-count="8"] .image-item:nth-child(1),
+  .moment-images[data-count="8"] .image-item:nth-child(2) {
+    grid-column: span 3;
+  }
+
+  .moment-images[data-count="8"] .image-item:nth-child(n+3) {
+    grid-column: span 2;
+  }
+
+  /* 9张图片 - 标准九宫格 */
+  .moment-images[data-count="9"] {
+    grid-template-columns: repeat(3, 132px);
+  }
+
+  /* 图片项目基础样式 */
+  .image-item {
+    position: relative;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    cursor: pointer;
+    aspect-ratio: 1;
+    background-color: var(--card-bg);
+    transition: transform 0.2s ease;
+  }
+
+  .image-item:focus {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+
+  .image-item:hover {
+    transform: scale(1.02);
+  }
+
+  .image-item img {
+    transition: transform 0.3s ease, filter 0.3s ease;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .image-item:hover img {
+    transform: scale(1.08);
+  }
+
+  /* 图片数量叠加层 */
+  .image-count-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    font-size: 1.5rem;
+    font-weight: bold;
+    backdrop-filter: blur(2px);
+  }
+
+  /* ===== 响应式调整 ===== */
+  @media (max-width: 480px) {
+    .moment-images[data-count="1"] .image-item,
+    .moment-images[data-count="1"] .image-item img {
+      max-width: 100%;
+      min-width: 120px;
+    }
+
+    .moment-images[data-count="2"],
+    .moment-images[data-count="4"] {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      max-width: 100%;
+    }
+
+    .moment-images[data-count="3"],
+    .moment-images[data-count="6"],
+    .moment-images[data-count="7"],
+    .moment-images[data-count="9"] {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      max-width: 100%;
+    }
+
+    .moment-images[data-count="5"],
+    .moment-images[data-count="8"] {
+      max-width: 100%;
+    }
+  }
+
+  /* 平板尺寸 */
+  @media (min-width: 481px) and (max-width: 768px) {
+    .moment-images[data-count="2"],
+    .moment-images[data-count="4"] {
+      grid-template-columns: repeat(2, 160px);
+    }
+
+    .moment-images[data-count="3"],
+    .moment-images[data-count="6"],
+    .moment-images[data-count="7"],
+    .moment-images[data-count="9"] {
+      grid-template-columns: repeat(3, 120px);
+    }
+  }
+
+  /* 展开按钮动画 */
+  .expand-btn {
+    display: inline-block;
+  }
+
+  /* 标签样式 */
+  .tag {
+    transition: background-color 0.2s ease;
+  }
+
+  .tag:hover {
+    background-color: var(--btn-hover-bg);
+  }
+</style>
+
+<script>
+  // 展开/收起功能
+  document.addEventListener('DOMContentLoaded', () => {
+    // 文本展开/收起
+    const expandBtns = document.querySelectorAll('.expand-btn');
+    
+    expandBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.getAttribute('data-target');
+        if (!targetId) return;
+        
+        const target = document.getElementById(targetId);
+        const isExpanded = btn.getAttribute('data-expanded') === 'true';
+        
+        if (target) {
+          if (isExpanded) {
+            target.classList.add('line-clamp-5');
+            btn.textContent = '展开全文';
+            btn.setAttribute('data-expanded', 'false');
+          } else {
+            target.classList.remove('line-clamp-5');
+            btn.textContent = '收起';
+            btn.setAttribute('data-expanded', 'true');
+          }
+        }
+      });
+    });
+
+    // ===== 图片灯箱预览功能 =====
+    initImageLightbox();
+  });
+
+  function initImageLightbox() {
+    // 创建灯箱元素
+    const lightbox = createLightbox();
+    document.body.appendChild(lightbox);
+
+    // 获取所有图片项
+    const imageItems = document.querySelectorAll('.moment-images .image-item');
+    
+    imageItems.forEach((item) => {
+      // 点击事件
+      item.addEventListener('click', () => openLightbox(item));
+      
+      // 键盘事件（无障碍支持）
+      item.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openLightbox(item);
+        }
+      });
+    });
+  }
+
+  function createLightbox() {
+    const lightbox = document.createElement('div');
+    lightbox.id = 'moment-lightbox';
+    lightbox.className = 'moment-lightbox';
+    lightbox.innerHTML = `
+      <div class="lightbox-overlay"></div>
+      <div class="lightbox-container">
+        <button class="lightbox-close" aria-label="关闭预览">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+        <button class="lightbox-prev" aria-label="上一张">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        <button class="lightbox-next" aria-label="下一张">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+        <div class="lightbox-content">
+          <img class="lightbox-image" src="" alt="预览图片" />
+        </div>
+        <div class="lightbox-counter">
+          <span class="current">1</span> / <span class="total">1</span>
+        </div>
+      </div>
+    `;
+
+    // 绑定灯箱事件
+    const overlay = lightbox.querySelector('.lightbox-overlay');
+    const closeBtn = lightbox.querySelector('.lightbox-close');
+    const prevBtn = lightbox.querySelector('.lightbox-prev');
+    const nextBtn = lightbox.querySelector('.lightbox-next');
+
+    overlay?.addEventListener('click', closeLightbox);
+    closeBtn?.addEventListener('click', closeLightbox);
+    prevBtn?.addEventListener('click', () => navigateLightbox(-1));
+    nextBtn?.addEventListener('click', () => navigateLightbox(1));
+
+    // 键盘导航
+    document.addEventListener('keydown', (e) => {
+      if (!lightbox.classList.contains('active')) return;
+      
+      switch (e.key) {
+        case 'Escape':
+          closeLightbox();
+          break;
+        case 'ArrowLeft':
+          navigateLightbox(-1);
+          break;
+        case 'ArrowRight':
+          navigateLightbox(1);
+          break;
+      }
+    });
+
+    return lightbox;
+  }
+
+  // 当前灯箱状态
+  let currentImages: string[] = [];
+  let currentIndex = 0;
+
+  function openLightbox(item: Element) {
+    const lightbox = document.getElementById('moment-lightbox');
+    if (!lightbox) return;
+
+    // 获取当前动态的所有图片
+    const container = item.closest('.moment-images');
+    if (!container) return;
+
+    const allItems = container.querySelectorAll('.image-item');
+    currentImages = Array.from(allItems).map(i => i.getAttribute('data-src') || '').filter(Boolean);
+    currentIndex = parseInt(item.getAttribute('data-index') || '0', 10);
+
+    updateLightboxImage(lightbox);
+    lightbox.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeLightbox() {
+    const lightbox = document.getElementById('moment-lightbox');
+    if (!lightbox) return;
+
+    lightbox.classList.remove('active');
+    document.body.style.overflow = '';
+    currentImages = [];
+    currentIndex = 0;
+  }
+
+  function navigateLightbox(direction: number) {
+    if (currentImages.length === 0) return;
+
+    currentIndex += direction;
+    if (currentIndex < 0) currentIndex = currentImages.length - 1;
+    if (currentIndex >= currentImages.length) currentIndex = 0;
+
+    const lightbox = document.getElementById('moment-lightbox');
+    if (lightbox) {
+      updateLightboxImage(lightbox);
+    }
+  }
+
+  function updateLightboxImage(lightbox: HTMLElement) {
+    const img = lightbox.querySelector('.lightbox-image') as HTMLImageElement;
+    const current = lightbox.querySelector('.lightbox-counter .current');
+    const total = lightbox.querySelector('.lightbox-counter .total');
+    const prevBtn = lightbox.querySelector('.lightbox-prev') as HTMLButtonElement;
+    const nextBtn = lightbox.querySelector('.lightbox-next') as HTMLButtonElement;
+
+    if (img && currentImages[currentIndex]) {
+      img.src = currentImages[currentIndex];
+    }
+
+    if (current) current.textContent = String(currentIndex + 1);
+    if (total) total.textContent = String(currentImages.length);
+
+    // 控制导航按钮显示
+    if (prevBtn) prevBtn.style.display = currentImages.length > 1 ? 'flex' : 'none';
+    if (nextBtn) nextBtn.style.display = currentImages.length > 1 ? 'flex' : 'none';
+  }
+</script>
+
+<!-- 灯箱样式 -->
+<style is:global>
+  .moment-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .moment-lightbox.active {
+    display: flex;
+  }
+
+  .lightbox-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(10px);
+  }
+
+  .lightbox-container {
+    position: relative;
+    z-index: 1;
+    max-width: 90vw;
+    max-height: 90vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .lightbox-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 100%;
+    max-height: 100%;
+  }
+
+  .lightbox-image {
+    max-width: 90vw;
+    max-height: 85vh;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: lightbox-fade-in 0.3s ease;
+  }
+
+  @keyframes lightbox-fade-in {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .lightbox-close {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    z-index: 10;
+  }
+
+  .lightbox-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+  }
+
+  .lightbox-prev,
+  .lightbox-next {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    z-index: 10;
+  }
+
+  .lightbox-prev {
+    left: 20px;
+  }
+
+  .lightbox-next {
+    right: 20px;
+  }
+
+  .lightbox-prev:hover,
+  .lightbox-next:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-50%) scale(1.1);
+  }
+
+  .lightbox-counter {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    font-size: 14px;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 8px 16px;
+    border-radius: 20px;
+    z-index: 10;
+  }
+
+  /* 移动端适配 */
+  @media (max-width: 640px) {
+    .lightbox-prev,
+    .lightbox-next {
+      width: 40px;
+      height: 40px;
+    }
+
+    .lightbox-prev {
+      left: 10px;
+    }
+
+    .lightbox-next {
+      right: 10px;
+    }
+
+    .lightbox-close {
+      top: 15px;
+      right: 15px;
+      width: 40px;
+      height: 40px;
+    }
+
+    .lightbox-image {
+      max-width: 95vw;
+      max-height: 80vh;
+    }
+  }
+</style>

@@ -534,6 +534,72 @@ const setup = () => {
 			heightExtend.classList.remove('hidden')
 		}
 	});
+	// 记录页面切换前的滚动位置和 HeroBanner 高度
+	let scrollPositionBeforeTransition = 0;
+	let bannerHeightBeforeTransition = 0;
+	let wasInBannerArea = false;
+
+	// 获取当前滚动位置
+	function getCurrentScrollTop() {
+		const osInstance = OverlayScrollbars(document.body);
+		if (osInstance) {
+			const viewport = osInstance.elements().viewport;
+			if (viewport) {
+				return viewport.scrollTop;
+			}
+		}
+		return document.documentElement.scrollTop || document.body.scrollTop || window.scrollY;
+	}
+
+	// 设置滚动位置
+	function setScrollTop(value: number) {
+		const osInstance = OverlayScrollbars(document.body);
+		if (osInstance) {
+			const viewport = osInstance.elements().viewport;
+			if (viewport) {
+				viewport.scrollTop = value;
+				return;
+			}
+		}
+		document.documentElement.scrollTop = value;
+		document.body.scrollTop = value;
+		window.scrollTo(0, value);
+	}
+
+	// 在链接点击时记录当前位置
+	window.swup.hooks.on('link:click', () => {
+		const heroBanner = document.getElementById('hero-banner');
+		scrollPositionBeforeTransition = getCurrentScrollTop();
+		bannerHeightBeforeTransition = heroBanner?.offsetHeight || 0;
+		
+		// 判断是否在 HeroBanner 区域内
+		wasInBannerArea = scrollPositionBeforeTransition < (bannerHeightBeforeTransition - 80);
+	});
+
+	// 在新内容加载后根据之前位置决定滚动行为
+	window.swup.hooks.on('content:replace', () => {
+		requestAnimationFrame(() => {
+			const heroBanner = document.getElementById('hero-banner');
+			if (!heroBanner || heroBanner.classList.contains('hidden')) {
+				return;
+			}
+
+			const newBannerHeight = heroBanner.offsetHeight;
+			const contentAreaTop = newBannerHeight - 80;
+
+			if (wasInBannerArea) {
+				// 用户之前在 HeroBanner 区域内，保持相对位置
+				// 根据之前在 banner 中的相对位置，计算新位置
+				const relativePosition = scrollPositionBeforeTransition / bannerHeightBeforeTransition;
+				const newPosition = relativePosition * newBannerHeight;
+				setScrollTop(Math.min(newPosition, contentAreaTop));
+			} else {
+				// 用户之前已经在内容区域，滚动到新页面的内容区域顶部
+				setScrollTop(contentAreaTop);
+			}
+		});
+	});
+
 	window.swup.hooks.on('visit:end', (_visit: {to: {url: string}}) => {
 		setTimeout(() => {
 			const heightExtend = document.getElementById('page-height-extend')

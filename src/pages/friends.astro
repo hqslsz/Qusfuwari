@@ -2,9 +2,9 @@
 import { friendCategories } from "../friends";
 import I18nKey from "../i18n/i18nKey";
 import { i18n } from "../i18n/translation";
-import MainGridLayout from "../layouts/MainGridLayout.astro";
+import HomeLayout from "../layouts/HomeLayout.astro";
 ---
-<MainGridLayout title={i18n(I18nKey.friends)} description={i18n(I18nKey.friends)}>
+<HomeLayout title={i18n(I18nKey.friends)} description={i18n(I18nKey.friends)}>
     <div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative min-h-32">
         <div class="card-base z-10 px-9 py-6 relative w-full">
             {friendCategories.map((category, index) => (
@@ -30,4 +30,4 @@ import MainGridLayout from "../layouts/MainGridLayout.astro";
             ))}
         </div>
     </div>
-</MainGridLayout>
+</HomeLayout>

@@ -40,7 +40,7 @@ export default defineConfig({
 			// the default value `transition-` cause transition delay
 			// when the Tailwind class `transition-all` is used
 			containers: ["main", "#toc"],
-			smoothScrolling: true,
+			smoothScrolling: false, // 禁用默认滚动，手动控制滚动到 HeroBanner 下方
 			cache: true,
 			preload: true,
 			accessibility: true,

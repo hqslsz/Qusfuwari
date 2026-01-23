@@ -1,0 +1,138 @@
+---
+/**
+ * 通用布局 - 支持 Hero Banner 的统一布局
+ * 用于所有页面，保持页面结构一致，让 Swup 切换更丝滑
+ */
+import BackToTop from "@components/control/BackToTop.astro";
+import Footer from "@components/Footer.astro";
+import HeroBanner from "@components/HeroBanner.astro";
+import Navbar from "@components/Navbar.astro";
+import SideBar from "@components/widget/SideBar.astro";
+import TOC from "@components/widget/TOC.astro";
+import type { MarkdownHeading } from "astro";
+import { siteConfig } from "../config";
+import Layout from "./Layout.astro";
+
+interface Props {
+	title?: string;
+	banner?: string;
+	description?: string;
+	lang?: string;
+	showHeroBanner?: boolean;
+	headings?: MarkdownHeading[];
+	setOGTypeArticle?: boolean;
+}
+
+const {
+	title,
+	banner,
+	description,
+	lang,
+	showHeroBanner = true, // 默认启用 HeroBanner
+	headings = [],
+	setOGTypeArticle = false,
+} = Astro.props;
+
+// 是否显示 TOC
+const showTOC = siteConfig.toc.enable && headings.length > 0;
+---
+
+<Layout title={title} banner={banner} description={description} lang={lang} setOGTypeArticle={setOGTypeArticle}>
+	<slot slot="head" name="head"></slot>
+
+	<!-- Hero Banner - 始终渲染以保持页面结构一致 -->
+	<HeroBanner class={showHeroBanner ? "" : "hidden"} />
+
+	<!-- Navbar - 固定在顶部 -->
+	<div id="top-row" class="z-50 pointer-events-none fixed top-0 left-0 right-0 transition-all duration-700 max-w-[var(--page-width)] px-0 md:px-4 mx-auto">
+		<div id="navbar-wrapper" class="pointer-events-auto transition-all">
+			<Navbar />
+		</div>
+	</div>
+
+	<!-- 主要内容区域 -->
+	<div class="relative w-full z-30" style={showHeroBanner ? "" : "margin-top: 5.5rem;"}>
+		<div class="relative max-w-[var(--page-width)] mx-auto">
+			<div id="main-grid" class="transition duration-700 w-full left-0 right-0 grid grid-cols-[17.5rem_auto] grid-rows-[auto_1fr_auto] lg:grid-rows-[auto] mx-auto gap-4 px-0 md:px-4">
+
+				<SideBar class="mb-4 row-start-2 row-end-3 col-span-2 lg:row-start-1 lg:row-end-2 lg:col-span-1 lg:max-w-[17.5rem] onload-animation" headings={headings} />
+
+				<main id="swup-container" class="transition-swup-fade col-span-2 lg:col-span-1 overflow-hidden">
+					<div id="content-wrapper" class="onload-animation">
+						<slot />
+						<div class="footer col-span-2 onload-animation hidden lg:block">
+							<Footer />
+						</div>
+					</div>
+				</main>
+
+				<div class="footer col-span-2 onload-animation block lg:hidden">
+					<Footer />
+				</div>
+			</div>
+
+			<BackToTop />
+		</div>
+	</div>
+
+	<!-- TOC - 目录（仅当有标题时显示） -->
+	{showTOC && (
+		<div class="absolute w-full z-0 hidden 2xl:block" style={showHeroBanner ? "top: 100vh;" : "top: 5.5rem;"}>
+			<div class="relative max-w-[var(--page-width)] mx-auto">
+				<div id="toc-wrapper" class="hidden lg:block transition absolute top-0 -right-[var(--toc-width)] w-[var(--toc-width)] items-center">
+					<div id="toc-inner-wrapper" class="fixed top-14 w-[var(--toc-width)] h-[calc(100vh_-_20rem)] overflow-y-scroll overflow-x-hidden hide-scrollbar">
+						<div id="toc" class="w-full h-full transition-swup-fade">
+							<div class="h-8 w-full"></div>
+							<TOC headings={headings} />
+							<div class="h-8 w-full"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	)}
+	
+	<!-- #toc needs to exist for Swup to work normally -->
+	{!showTOC && <div id="toc"></div>}
+</Layout>
+
+<style>
+	/* 确保导航栏在滚动时正确显示 */
+	#navbar-wrapper {
+		background: transparent;
+		transition: background-color 0.3s ease;
+	}
+
+	:global(body.scrolled) #navbar-wrapper {
+		background: var(--card-bg);
+		backdrop-filter: blur(10px);
+	}
+</style>
+
+<script>
+	// 监听滚动事件，为 body 添加 scrolled 类
+	function handleScroll() {
+		const heroBanner = document.getElementById('hero-banner');
+		// 检查 HeroBanner 是否显示（不是 hidden）
+		const isHeroBannerVisible = heroBanner && !heroBanner.classList.contains('hidden');
+		const heroHeight = isHeroBannerVisible ? heroBanner.offsetHeight : 0;
+		
+		if (window.scrollY > heroHeight - 80 || !isHeroBannerVisible) {
+			document.body.classList.add('scrolled');
+		} else {
+			document.body.classList.remove('scrolled');
+		}
+	}
+
+	window.addEventListener('scroll', handleScroll, { passive: true });
+	handleScroll(); // 初始检查
+
+	// Swup 页面切换后重新检查
+	if ((window as any).swup) {
+		(window as any).swup.hooks.on('page:view', handleScroll);
+	} else {
+		document.addEventListener('swup:enable', () => {
+			(window as any).swup.hooks.on('page:view', handleScroll);
+		});
+	}
+</script>

@@ -26,9 +26,22 @@ export const siteConfig: SiteConfig = {
 		},
 	},
 
+	// Hero Banner 配置（类似 WordPress Argon 主题的全屏横幅）
+	heroBanner: {
+		enable: true, // 是否在首页显示 Hero Banner
+		typingTexts: [
+			// 打字机效果显示的文字，按顺序循环
+			"天下大统",
+			"欢迎来到 QusMarsh",
+			"探索，记录，分享",
+		],
+		showParticles: true, // 是否显示粒子动画效果
+		showScrollIndicator: true, // 是否显示向下滚动指示器
+	},
+
 	background: {
 		enable: true, // 是否启用背景图
-		src: "https://www.loliapi.com/acg/", // 随机背景API（已添加缓存机制防止闪烁）
+		src: "https://www.dmoe.cc/random.php", // 随机背景API（已添加缓存机制防止闪烁）
 		position: "center", // 背景位置: 'top', 'center', 'bottom'
 		size: "cover", // 背景大小: 'cover', 'contain', 'auto'
 		repeat: "no-repeat", // 背景重复: 'no-repeat', 'repeat'
@@ -57,6 +70,7 @@ export const navBarConfig: NavBarConfig = {
 		LinkPreset.Archive,
 		LinkPreset.About,
 		LinkPreset.Friends,
+		LinkPreset.Moments,
 		{
 			name: "GitHub",
 			url: "https://github.com/saicaca/fuwari", // 内部链接不需要包含基础路径，会自动添加

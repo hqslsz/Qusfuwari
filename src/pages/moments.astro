@@ -1,0 +1,163 @@
+---
+/**
+ * 朋友圈/说说页面
+ * 展示所有动态，按时间倒序排列
+ */
+import MomentCard from "@components/moment/MomentCard.astro";
+import I18nKey from "../i18n/i18nKey";
+import { i18n } from "../i18n/translation";
+import HomeLayout from "../layouts/HomeLayout.astro";
+import { momentsData } from "../moments";
+
+// 按发布时间倒序排序
+const sortedMoments = [...momentsData].sort(
+	(a, b) => b.published.getTime() - a.published.getTime(),
+);
+
+// 计算统计信息
+const totalMoments = sortedMoments.length;
+const totalImages = sortedMoments.reduce(
+	(acc, m) => acc + (m.images?.length || 0),
+	0,
+);
+---
+
+<HomeLayout title={i18n(I18nKey.moments)} description="记录生活中的点滴">
+  <div class="w-full">
+    <!-- 页面头部 -->
+    <div class="moments-header card-base mb-6 p-6 rounded-[var(--radius-large)] overflow-hidden relative">
+      <div class="header-content relative z-10">
+        <div class="header-text">
+          <h1 class="moments-title text-2xl md:text-3xl font-bold text-white mb-2 flex items-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            {i18n(I18nKey.moments)}
+          </h1>
+          <p class="moments-subtitle text-white/80 text-sm md:text-base">
+            记录生活中的美好瞬间 ✨
+          </p>
+        </div>
+        <div class="header-stats flex gap-6 mt-4 md:mt-0">
+          <div class="stat-item text-center">
+            <div class="stat-number text-2xl font-bold text-white">{totalMoments}</div>
+            <div class="stat-label text-white/70 text-sm">条动态</div>
+          </div>
+          <div class="stat-item text-center">
+            <div class="stat-number text-2xl font-bold text-white">{totalImages}</div>
+            <div class="stat-label text-white/70 text-sm">张图片</div>
+          </div>
+        </div>
+      </div>
+      <!-- 装饰背景 -->
+      <div class="header-decoration absolute inset-0 opacity-20">
+        <div class="absolute -top-10 -right-10 w-40 h-40 bg-white/20 rounded-full blur-2xl"></div>
+        <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
+      </div>
+    </div>
+
+    <!-- 动态列表 -->
+    <div class="moments-list space-y-4">
+      {sortedMoments.length > 0 ? (
+        sortedMoments.map((moment, index) => (
+          <div 
+            class="moment-wrapper onload-animation"
+            style={`animation-delay: ${index * 50}ms;`}
+          >
+            <MomentCard
+              id={moment.id}
+              content={moment.content}
+              published={moment.published}
+              images={moment.images}
+              tags={moment.tags}
+              location={moment.location}
+              index={index}
+            />
+          </div>
+        ))
+      ) : (
+        <div class="empty-state card-base p-12 text-center rounded-[var(--radius-large)]">
+          <div class="text-6xl mb-4">📝</div>
+          <p class="text-neutral-500 dark:text-neutral-400 text-lg">
+            还没有发布任何动态
+          </p>
+          <p class="text-neutral-400 dark:text-neutral-500 text-sm mt-2">
+            生活需要记录，快来写下第一条说说吧~
+          </p>
+        </div>
+      )}
+    </div>
+  </div>
+</HomeLayout>
+
+<style>
+  .moments-header {
+    background: linear-gradient(135deg, var(--primary) 0%, hsl(calc(var(--hue) + 30), 70%, 55%) 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .header-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .header-content {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+    }
+  }
+
+  .header-stats {
+    display: flex;
+    gap: 2rem;
+  }
+
+  .stat-item {
+    min-width: 60px;
+  }
+
+  /* 动态列表入场动画 */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .moment-wrapper {
+    animation: fadeInUp 0.5s ease forwards;
+    opacity: 0;
+  }
+
+  .empty-state {
+    animation: fadeInUp 0.5s ease forwards;
+  }
+
+  /* 装饰元素动画 */
+  .header-decoration div {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .header-decoration div:nth-child(2) {
+    animation-delay: -3s;
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0) rotate(0deg);
+    }
+    50% {
+      transform: translateY(-10px) rotate(5deg);
+    }
+  }
+</style>

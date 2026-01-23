@@ -1,0 +1,511 @@
+---
+/**
+ * HeroBanner 组件 - 类似 WordPress Argon 主题的全屏英雄横幅
+ * 特点：透明背景（使用现有背景图）、头像居中、打字机效果标语、向下滚动箭头、粒子效果
+ */
+import { Icon } from "astro-icon/components";
+import { profileConfig, siteConfig } from "../config";
+
+interface Props {
+	class?: string;
+}
+
+const { class: className } = Astro.props;
+const config = profileConfig;
+const heroBannerConfig = siteConfig.heroBanner;
+
+// 打字机效果的文字数组 - 优先使用配置，否则使用默认值
+const typingTexts = heroBannerConfig?.typingTexts || [
+	config.bio || "探索无限可能",
+	"欢迎来到我的博客",
+	"记录生活，分享技术",
+];
+
+const showParticles = heroBannerConfig?.showParticles ?? true;
+const showScrollIndicator = heroBannerConfig?.showScrollIndicator ?? true;
+---
+
+<section id="hero-banner" class:list={["hero-banner", className]}>
+	<!-- 半透明遮罩层（让现有背景图透出） -->
+	<div class="hero-bg">
+		<div class="hero-overlay"></div>
+		{showParticles && <div class="hero-particles" id="particles"></div>}
+	</div>
+
+	<!-- 主要内容 -->
+	<div class="hero-content">
+		<!-- 网站标题 -->
+		<h1 class="hero-title">{siteConfig.title}</h1>
+
+		<!-- 打字机效果标语 -->
+		<div class="hero-subtitle">
+			<span class="typing-text" id="typing-text"></span>
+			<span class="typing-cursor">|</span>
+		</div>
+
+		<!-- 社交链接 -->
+		<div class="hero-social">
+			{config.links.map(item => (
+				<a 
+					href={item.url} 
+					target="_blank" 
+					rel="noopener noreferrer"
+					aria-label={item.name}
+					class="hero-social-link"
+				>
+					<Icon name={item.icon} class="text-xl" />
+				</a>
+			))}
+		</div>
+	</div>
+
+	<!-- 向下滚动指示器 -->
+	{showScrollIndicator && (
+		<div class="hero-scroll-indicator" id="scroll-indicator">
+			<div class="scroll-mouse">
+				<div class="scroll-wheel"></div>
+			</div>
+			<span class="scroll-text">向下滚动</span>
+			<Icon name="fa6-solid:chevron-down" class="scroll-arrow" />
+		</div>
+	)}
+</section>
+
+<!-- 传递配置到客户端 -->
+<script define:vars={{ typingTexts, showParticles }}>
+	window.heroTypingTexts = typingTexts;
+	window.heroShowParticles = showParticles;
+</script>
+
+<script>
+	// 打字机效果
+	class TypeWriter {
+		private texts: string[];
+		private element: HTMLElement | null;
+		private textIndex: number = 0;
+		private charIndex: number = 0;
+		private isDeleting: boolean = false;
+		private typeSpeed: number = 100;
+		private deleteSpeed: number = 50;
+		private pauseTime: number = 2000;
+
+		constructor(elementId: string, texts: string[]) {
+			this.element = document.getElementById(elementId);
+			this.texts = texts;
+			if (this.element && texts.length > 0) {
+				this.type();
+			}
+		}
+
+		private type() {
+			if (!this.element) return;
+
+			const currentText = this.texts[this.textIndex];
+			
+			if (this.isDeleting) {
+				this.element.textContent = currentText.substring(0, this.charIndex - 1);
+				this.charIndex--;
+			} else {
+				this.element.textContent = currentText.substring(0, this.charIndex + 1);
+				this.charIndex++;
+			}
+
+			let nextDelay = this.isDeleting ? this.deleteSpeed : this.typeSpeed;
+
+			if (!this.isDeleting && this.charIndex === currentText.length) {
+				nextDelay = this.pauseTime;
+				this.isDeleting = true;
+			} else if (this.isDeleting && this.charIndex === 0) {
+				this.isDeleting = false;
+				this.textIndex = (this.textIndex + 1) % this.texts.length;
+				nextDelay = 500;
+			}
+
+			setTimeout(() => this.type(), nextDelay);
+		}
+	}
+
+	// 粒子效果
+	class ParticleSystem {
+		private canvas: HTMLCanvasElement | null = null;
+		private ctx: CanvasRenderingContext2D | null = null;
+		private particles: Array<{
+			x: number;
+			y: number;
+			vx: number;
+			vy: number;
+			size: number;
+			opacity: number;
+		}> = [];
+		private animationId: number = 0;
+
+		constructor(containerId: string) {
+			const container = document.getElementById(containerId);
+			if (!container) return;
+
+			this.canvas = document.createElement('canvas');
+			this.canvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;';
+			container.appendChild(this.canvas);
+			
+			const ctx = this.canvas.getContext('2d');
+			if (!ctx) return;
+			this.ctx = ctx;
+
+			this.resize();
+			this.createParticles();
+			this.animate();
+
+			window.addEventListener('resize', () => this.resize());
+		}
+
+		private resize() {
+			if (!this.canvas) return;
+			this.canvas.width = this.canvas.offsetWidth;
+			this.canvas.height = this.canvas.offsetHeight;
+		}
+
+		private createParticles() {
+			if (!this.canvas) return;
+			const particleCount = Math.floor((this.canvas.width * this.canvas.height) / 15000);
+			this.particles = [];
+			
+			for (let i = 0; i < particleCount; i++) {
+				this.particles.push({
+					x: Math.random() * this.canvas.width,
+					y: Math.random() * this.canvas.height,
+					vx: (Math.random() - 0.5) * 0.5,
+					vy: (Math.random() - 0.5) * 0.5,
+					size: Math.random() * 2 + 1,
+					opacity: Math.random() * 0.5 + 0.2
+				});
+			}
+		}
+
+		private animate() {
+			if (!this.ctx || !this.canvas) return;
+			
+			this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+			const ctx = this.ctx;
+			const canvasWidth = this.canvas.width;
+			const canvasHeight = this.canvas.height;
+
+			this.particles.forEach((p, i) => {
+				p.x += p.vx;
+				p.y += p.vy;
+
+				if (p.x < 0 || p.x > canvasWidth) p.vx *= -1;
+				if (p.y < 0 || p.y > canvasHeight) p.vy *= -1;
+
+				ctx.beginPath();
+				ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+				ctx.fillStyle = `rgba(255, 255, 255, ${p.opacity})`;
+				ctx.fill();
+
+				// 连接附近的粒子
+				for (let j = i + 1; j < this.particles.length; j++) {
+					const p2 = this.particles[j];
+					const dx = p.x - p2.x;
+					const dy = p.y - p2.y;
+					const distance = Math.sqrt(dx * dx + dy * dy);
+
+					if (distance < 120) {
+						ctx.beginPath();
+						ctx.moveTo(p.x, p.y);
+						ctx.lineTo(p2.x, p2.y);
+						ctx.strokeStyle = `rgba(255, 255, 255, ${0.15 * (1 - distance / 120)})`;
+						ctx.lineWidth = 0.5;
+						ctx.stroke();
+					}
+				}
+			});
+
+			this.animationId = requestAnimationFrame(() => this.animate());
+		}
+
+		destroy() {
+			cancelAnimationFrame(this.animationId);
+			this.canvas?.remove();
+		}
+	}
+
+	// 滚动到内容区域
+	function scrollToContent() {
+		const banner = document.getElementById('hero-banner');
+		if (banner) {
+			const bannerHeight = banner.offsetHeight;
+			window.scrollTo({
+				top: bannerHeight - 80,
+				behavior: 'smooth'
+			});
+		}
+	}
+
+	// 防止重复初始化的标记
+	let typeWriterInstance: TypeWriter | null = null;
+	let particleInstance: ParticleSystem | null = null;
+	let isInitialized = false;
+
+	// 初始化
+	function initHeroBanner() {
+		const heroBanner = document.getElementById('hero-banner');
+		// 如果 HeroBanner 被隐藏，不执行初始化
+		if (!heroBanner || heroBanner.classList.contains('hidden')) {
+			return;
+		}
+
+		// 清理旧实例
+		if (particleInstance) {
+			particleInstance.destroy();
+			particleInstance = null;
+		}
+
+		// 初始化打字机（只在第一次或者元素重新创建时）
+		const typingElement = document.getElementById('typing-text');
+		if (typingElement && typingElement.textContent === '') {
+			const texts = (window as any).heroTypingTexts || ['欢迎访问'];
+			typeWriterInstance = new TypeWriter('typing-text', texts);
+		}
+
+		// 根据配置初始化粒子效果
+		if ((window as any).heroShowParticles) {
+			const particleContainer = document.getElementById('particles');
+			// 检查是否已有 canvas，避免重复创建
+			if (particleContainer && !particleContainer.querySelector('canvas')) {
+				particleInstance = new ParticleSystem('particles');
+			}
+		}
+
+		// 绑定滚动指示器点击（移除旧的监听器再添加新的）
+		const scrollIndicator = document.getElementById('scroll-indicator');
+		if (scrollIndicator) {
+			scrollIndicator.removeEventListener('click', scrollToContent);
+			scrollIndicator.addEventListener('click', scrollToContent);
+		}
+
+		isInitialized = true;
+	}
+
+	// 页面加载完成后初始化
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', initHeroBanner);
+	} else {
+		initHeroBanner();
+	}
+
+	// Swup 页面切换支持
+	if ((window as any).swup) {
+		(window as any).swup.hooks.on('page:view', initHeroBanner);
+	} else {
+		document.addEventListener('swup:enable', () => {
+			(window as any).swup.hooks.on('page:view', initHeroBanner);
+		});
+	}
+</script>
+
+<style>
+	.hero-banner {
+		position: relative;
+		width: 100%;
+		height: 100vh;
+		min-height: 600px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		overflow: hidden;
+	}
+
+	/* 背景层 - 使用现有的二次元随机图背景 */
+	.hero-bg {
+		position: absolute;
+		inset: 0;
+		z-index: 0;
+	}
+
+	.hero-particles {
+		position: absolute;
+		inset: 0;
+		z-index: 2;
+	}
+
+	/* 轻微遮罩 - 仅用于提高文字可读性，不影响背景展示 */
+	.hero-overlay {
+		position: absolute;
+		inset: 0;
+		z-index: 1;
+		background: rgba(0, 0, 0, 0);
+	}
+
+	/* 主要内容 */
+	.hero-content {
+		position: relative;
+		z-index: 10;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+		padding: 0 1.5rem;
+		animation: fadeInUp 1s ease-out;
+	}
+
+	@keyframes fadeInUp {
+		from {
+			opacity: 0;
+			transform: translateY(30px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	/* 标题 */
+	.hero-title {
+		font-size: clamp(2rem, 6vw, 3.5rem);
+		font-weight: 700;
+		color: white;
+		margin: 0 0 0.75rem;
+		text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+		letter-spacing: 0.02em;
+	}
+
+	/* 打字机效果副标题 */
+	.hero-subtitle {
+		font-size: clamp(1rem, 3vw, 1.25rem);
+		color: rgba(255, 255, 255, 0.9);
+		margin-bottom: 2rem;
+		min-height: 1.8em;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.typing-text {
+		text-shadow: 0 1px 10px rgba(0, 0, 0, 0.2);
+	}
+
+	.typing-cursor {
+		color: white;
+		font-weight: 100;
+		animation: blink 1s step-end infinite;
+		margin-left: 2px;
+	}
+
+	@keyframes blink {
+		0%, 100% { opacity: 1; }
+		50% { opacity: 0; }
+	}
+
+	/* 社交链接 */
+	.hero-social {
+		display: flex;
+		gap: 0.75rem;
+		margin-bottom: 2rem;
+	}
+
+	.hero-social-link {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 44px;
+		height: 44px;
+		border-radius: 50%;
+		background: rgba(255, 255, 255, 0.15);
+		backdrop-filter: blur(10px);
+		color: white;
+		transition: all 0.3s ease;
+		border: 1px solid rgba(255, 255, 255, 0.2);
+	}
+
+	.hero-social-link:hover {
+		background: rgba(255, 255, 255, 0.25);
+		transform: translateY(-3px);
+		box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+	}
+
+	/* 向下滚动指示器 */
+	.hero-scroll-indicator {
+		position: absolute;
+		bottom: 2rem;
+		left: 50%;
+		transform: translateX(-50%);
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.5rem;
+		cursor: pointer;
+		animation: floatUp 2s ease-in-out infinite;
+		z-index: 10;
+	}
+
+	@keyframes floatUp {
+		0%, 100% { transform: translateX(-50%) translateY(0); }
+		50% { transform: translateX(-50%) translateY(-10px); }
+	}
+
+	.scroll-mouse {
+		width: 24px;
+		height: 38px;
+		border: 2px solid rgba(255, 255, 255, 0.7);
+		border-radius: 12px;
+		position: relative;
+	}
+
+	.scroll-wheel {
+		position: absolute;
+		left: 50%;
+		top: 8px;
+		transform: translateX(-50%);
+		width: 4px;
+		height: 8px;
+		background: rgba(255, 255, 255, 0.8);
+		border-radius: 2px;
+		animation: scrollWheel 1.5s ease-in-out infinite;
+	}
+
+	@keyframes scrollWheel {
+		0%, 100% { 
+			opacity: 1;
+			transform: translateX(-50%) translateY(0);
+		}
+		50% { 
+			opacity: 0.5;
+			transform: translateX(-50%) translateY(8px);
+		}
+	}
+
+	.scroll-text {
+		font-size: 0.75rem;
+		color: rgba(255, 255, 255, 0.7);
+		letter-spacing: 0.1em;
+	}
+
+	.scroll-arrow {
+		color: rgba(255, 255, 255, 0.7);
+		font-size: 0.875rem;
+		animation: arrowBounce 1.5s ease-in-out infinite;
+	}
+
+	@keyframes arrowBounce {
+		0%, 100% { transform: translateY(0); }
+		50% { transform: translateY(5px); }
+	}
+
+	/* 响应式 */
+	@media (max-width: 768px) {
+		.hero-avatar {
+			width: 110px;
+			height: 110px;
+		}
+
+		.hero-social-link {
+			width: 40px;
+			height: 40px;
+		}
+
+		.hero-scroll-indicator {
+			bottom: 1.5rem;
+		}
+	}
+</style>

@@ -4,6 +4,7 @@ enum I18nKey {
 	archive = "archive",
 	friends = "friends",
 	rice = "rice",
+	moments = "moments",
 	search = "search",
 
 	tags = "tags",

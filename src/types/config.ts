@@ -4,17 +4,7 @@ export type SiteConfig = {
 	title: string;
 	subtitle: string;
 
-	lang:
-		| "en"
-		| "zh_CN"
-		| "zh_TW"
-		| "ja"
-		| "ko"
-		| "es"
-		| "th"
-		| "vi"
-		| "tr"
-		| "id";
+	lang: "en" | "zh_CN" | "ja";
 
 	themeColor: {
 		hue: number;
@@ -30,6 +20,7 @@ export type SiteConfig = {
 			url?: string;
 		};
 	};
+	heroBanner?: HeroBannerConfig;
 	background: BackgroundConfig;
 	toc: {
 		enable: boolean;
@@ -51,6 +42,7 @@ export enum LinkPreset {
 	About = 2,
 	Friends = 3,
 	Rice = 4,
+	Moments = 5,
 }
 
 export type NavBarLink = {
@@ -116,4 +108,11 @@ export interface BackgroundConfig {
 	repeat: "no-repeat" | "repeat" | "repeat-x" | "repeat-y";
 	attachment: "fixed" | "scroll" | "local";
 	opacity: number;
+}
+
+export interface HeroBannerConfig {
+	enable: boolean;
+	typingTexts?: string[]; // 打字机效果显示的文字数组
+	showParticles?: boolean; // 是否显示粒子效果
+	showScrollIndicator?: boolean; // 是否显示向下滚动指示器
 }
