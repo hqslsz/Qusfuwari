@@ -88,6 +88,8 @@ const showScrollIndicator = heroBannerConfig?.showScrollIndicator ?? true;
 		private typeSpeed: number = 100;
 		private deleteSpeed: number = 50;
 		private pauseTime: number = 2000;
+		private timeoutId: number | null = null;
+		private isDestroyed: boolean = false;
 
 		constructor(elementId: string, texts: string[]) {
 			this.element = document.getElementById(elementId);
@@ -98,16 +100,17 @@ const showScrollIndicator = heroBannerConfig?.showScrollIndicator ?? true;
 		}
 
 		private type() {
-			if (!this.element) return;
+			// 如果已被销毁，停止执行
+			if (this.isDestroyed || !this.element) return;
 
 			const currentText = this.texts[this.textIndex];
 			
 			if (this.isDeleting) {
-				this.element.textContent = currentText.substring(0, this.charIndex - 1);
 				this.charIndex--;
+				this.element.textContent = currentText.substring(0, this.charIndex);
 			} else {
-				this.element.textContent = currentText.substring(0, this.charIndex + 1);
 				this.charIndex++;
+				this.element.textContent = currentText.substring(0, this.charIndex);
 			}
 
 			let nextDelay = this.isDeleting ? this.deleteSpeed : this.typeSpeed;
@@ -121,7 +124,16 @@ const showScrollIndicator = heroBannerConfig?.showScrollIndicator ?? true;
 				nextDelay = 500;
 			}
 
-			setTimeout(() => this.type(), nextDelay);
+			this.timeoutId = window.setTimeout(() => this.type(), nextDelay);
+		}
+
+		destroy() {
+			this.isDestroyed = true;
+			if (this.timeoutId !== null) {
+				clearTimeout(this.timeoutId);
+				this.timeoutId = null;
+			}
+			this.element = null;
 		}
 	}
 
@@ -251,18 +263,19 @@ const showScrollIndicator = heroBannerConfig?.showScrollIndicator ?? true;
 		const heroBanner = document.getElementById('hero-banner');
 		// 如果 HeroBanner 被隐藏，不执行初始化
 		if (!heroBanner || heroBanner.classList.contains('hidden')) {
+			// 如果 HeroBanner 被隐藏，清理所有实例
+			cleanupInstances();
 			return;
 		}
 
 		// 清理旧实例
-		if (particleInstance) {
-			particleInstance.destroy();
-			particleInstance = null;
-		}
+		cleanupInstances();
 
-		// 初始化打字机（只在第一次或者元素重新创建时）
+		// 初始化打字机
 		const typingElement = document.getElementById('typing-text');
-		if (typingElement && typingElement.textContent === '') {
+		if (typingElement) {
+			// 清空文本内容，重新开始
+			typingElement.textContent = '';
 			const texts = (window as any).heroTypingTexts || ['欢迎访问'];
 			typeWriterInstance = new TypeWriter('typing-text', texts);
 		}
@@ -284,6 +297,18 @@ const showScrollIndicator = heroBannerConfig?.showScrollIndicator ?? true;
 		}
 
 		isInitialized = true;
+	}
+
+	// 清理所有实例
+	function cleanupInstances() {
+		if (typeWriterInstance) {
+			typeWriterInstance.destroy();
+			typeWriterInstance = null;
+		}
+		if (particleInstance) {
+			particleInstance.destroy();
+			particleInstance = null;
+		}
 	}
 
 	// 页面加载完成后初始化

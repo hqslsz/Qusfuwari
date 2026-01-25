@@ -43,8 +43,8 @@ const showTOC = siteConfig.toc.enable && headings.length > 0;
 	<!-- Hero Banner - 始终渲染以保持页面结构一致 -->
 	<HeroBanner class={showHeroBanner ? "" : "hidden"} />
 
-	<!-- Navbar - 固定在顶部 -->
-	<div id="top-row" class="z-50 pointer-events-none fixed top-0 left-0 right-0 transition-all duration-700 max-w-[var(--page-width)] px-0 md:px-4 mx-auto">
+	<!-- Navbar - 固定在顶部，HeroBanner 显示时隐藏 -->
+	<div id="top-row" class="z-50 pointer-events-none fixed top-0 left-0 right-0 transition-all duration-500 max-w-[var(--page-width)] px-0 md:px-4 mx-auto navbar-hidden">
 		<div id="navbar-wrapper" class="pointer-events-auto transition-all">
 			<Navbar />
 		</div>
@@ -97,6 +97,23 @@ const showTOC = siteConfig.toc.enable && headings.length > 0;
 </Layout>
 
 <style>
+	/* 导航栏隐藏状态（HeroBanner 显示时） */
+	#top-row {
+		opacity: 1;
+		transform: translateY(0);
+		transition: opacity 0.4s ease, transform 0.4s ease;
+	}
+
+	#top-row.navbar-hidden {
+		opacity: 0;
+		transform: translateY(-100%);
+		pointer-events: none !important;
+	}
+
+	#top-row.navbar-hidden * {
+		pointer-events: none !important;
+	}
+
 	/* 确保导航栏在滚动时正确显示 */
 	#navbar-wrapper {
 		background: transparent;
@@ -110,13 +127,31 @@ const showTOC = siteConfig.toc.enable && headings.length > 0;
 </style>
 
 <script>
-	// 监听滚动事件，为 body 添加 scrolled 类
+	// 监听滚动事件，控制导航栏显示和 body 的 scrolled 类
 	function handleScroll() {
 		const heroBanner = document.getElementById('hero-banner');
+		const topRow = document.getElementById('top-row');
+		
 		// 检查 HeroBanner 是否显示（不是 hidden）
 		const isHeroBannerVisible = heroBanner && !heroBanner.classList.contains('hidden');
 		const heroHeight = isHeroBannerVisible ? heroBanner.offsetHeight : 0;
 		
+		// 滚动阈值：当滚动超过 HeroBanner 高度的 70% 时显示导航栏
+		const scrollThreshold = heroHeight * 0.7;
+		const hasScrolledPastBanner = window.scrollY > scrollThreshold;
+		
+		// 控制导航栏显示/隐藏
+		if (topRow) {
+			if (!isHeroBannerVisible || hasScrolledPastBanner) {
+				// 如果没有 HeroBanner 或者滚动过了，显示导航栏
+				topRow.classList.remove('navbar-hidden');
+			} else {
+				// HeroBanner 可见且没有滚动过，隐藏导航栏
+				topRow.classList.add('navbar-hidden');
+			}
+		}
+		
+		// 控制 body 的 scrolled 类（用于导航栏背景等样式）
 		if (window.scrollY > heroHeight - 80 || !isHeroBannerVisible) {
 			document.body.classList.add('scrolled');
 		} else {
