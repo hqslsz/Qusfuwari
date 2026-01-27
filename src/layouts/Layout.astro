@@ -167,16 +167,19 @@ const bannerOffset =
 						
 						const img = new Image();
 						img.onload = function() {
+							// 使用双 rAF 确保浏览器完成当前帧的渲染，避免闪烁
 							requestAnimationFrame(() => {
-								// 如果是随机API，缓存实际加载的图片URL
-								if (isRandomApi && !sessionStorage.getItem('cached-bg-url')) {
-									sessionStorage.setItem('cached-bg-url', img.src);
-									sessionStorage.setItem('cached-bg-time', Date.now().toString());
-									document.documentElement.style.setProperty('--bg-url', `url("${img.src}")`);
-								}
-								document.body.classList.add('bg-loaded');
-								document.documentElement.style.setProperty('--card-bg', 'var(--card-bg-transparent)');
-								document.documentElement.style.setProperty('--float-panel-bg', 'var(--float-panel-bg-transparent)');
+								requestAnimationFrame(() => {
+									// 如果是随机API，缓存实际加载的图片URL
+									if (isRandomApi && !sessionStorage.getItem('cached-bg-url')) {
+										sessionStorage.setItem('cached-bg-url', img.src);
+										sessionStorage.setItem('cached-bg-time', Date.now().toString());
+										document.documentElement.style.setProperty('--bg-url', `url("${img.src}")`);
+									}
+									document.body.classList.add('bg-loaded');
+									document.documentElement.style.setProperty('--card-bg', 'var(--card-bg-transparent)');
+									document.documentElement.style.setProperty('--float-panel-bg', 'var(--float-panel-bg-transparent)');
+								});
 							});
 						};
 						img.onerror = function() {
@@ -191,9 +194,11 @@ const bannerOffset =
 						setTimeout(() => {
 							if (!document.body.classList.contains('bg-loaded')) {
 								requestAnimationFrame(() => {
-									document.body.classList.add('bg-loaded');
-									document.documentElement.style.setProperty('--card-bg', 'var(--card-bg-transparent)');
-									document.documentElement.style.setProperty('--float-panel-bg', 'var(--float-panel-bg-transparent)');
+									requestAnimationFrame(() => {
+										document.body.classList.add('bg-loaded');
+										document.documentElement.style.setProperty('--card-bg', 'var(--card-bg-transparent)');
+										document.documentElement.style.setProperty('--float-panel-bg', 'var(--float-panel-bg-transparent)');
+									});
 								});
 							}
 						}, 3000);
@@ -237,15 +242,27 @@ const bannerOffset =
 				opacity: 0;
 				pointer-events: none;
 				z-index: -1;
-				transition: opacity 0.5s ease;
+				/* 提前告知浏览器 opacity 会变化，避免闪烁 */
+				will-change: opacity;
+				/* 使用更平滑的过渡，避免 Chrome 闪屏 */
+				transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 				/* 强制创建独立合成层，避免重绘影响其他元素 */
-				transform: translateZ(0);
+				transform: translate3d(0, 0, 0);
 				backface-visibility: hidden;
 				-webkit-backface-visibility: hidden;
+				/* 隔离重绘范围，防止 GIF 动画影响其他元素 */
+				contain: strict;
+				isolation: isolate;
+				/* 像素画保持锐利边缘，禁用浏览器默认的平滑缩放 */
+				image-rendering: pixelated;
+				image-rendering: -moz-crisp-edges; /* Firefox 旧版本 */
+				image-rendering: crisp-edges;
 			}
 			
 			body.bg-loaded::before {
 				opacity: calc(var(--bg-opacity) * var(--bg-enable));
+				/* 加载完成后移除 will-change 释放资源 */
+				will-change: auto;
 			}
 		</style>  <!-- defines global css variables. This will be applied to <html> <body> and some other elements idk why -->
 

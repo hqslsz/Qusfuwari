@@ -102,24 +102,40 @@ const mainPanelTop = siteConfig.banner.enable
     </div>
 </div>
 
-<!-- The things that should be under the banner, only the TOC for now -->
-<div class="absolute w-full z-0 hidden xl:block">
-    <div class="relative max-w-[var(--page-width)] mx-auto">
-        <!-- TOC component -->
-        {siteConfig.toc.enable && <div id="toc-wrapper" class:list={["hidden xl:block transition absolute top-0 -right-[var(--toc-width)] w-[var(--toc-width)] items-center",
-            {"toc-hide": siteConfig.banner.enable}]}
-        >
-            <div id="toc-inner-wrapper" class="fixed top-14 w-[var(--toc-width)] h-[calc(100vh_-_20rem)] overflow-y-scroll overflow-x-hidden hide-scrollbar">
-                <div id="toc" class="w-full h-full transition-swup-fade ">
-                    <div class="h-8 w-full"></div>
-                    <TOC headings={headings}></TOC>
-                    <div class="h-8 w-full"></div>
-                </div>
-            </div>
-        </div>}
-
-        <!-- #toc needs to exist for Swup to work normally -->
-        {!siteConfig.toc.enable && <div id="toc"></div>}
+<!-- TOC component - 使用固定定位，明确设置 right 值避免背景动画影响位置 -->
+{siteConfig.toc.enable && <div id="toc-wrapper" class:list={["hidden xl:block transition",
+    {"toc-hide": siteConfig.banner.enable}]}
+>
+    <div id="toc-inner-wrapper" class="fixed top-14 right-[1rem] w-[var(--toc-width)] h-[calc(100vh_-_20rem)] overflow-y-scroll overflow-x-hidden hide-scrollbar will-change-transform">
+        <div id="toc" class="w-full h-full transition-swup-fade">
+            <div class="h-8 w-full"></div>
+            <TOC headings={headings}></TOC>
+            <div class="h-8 w-full"></div>
+        </div>
     </div>
-</div>
+</div>}
+
+<!-- #toc needs to exist for Swup to work normally -->
+{!siteConfig.toc.enable && <div id="toc"></div>}
 </Layout>
+
+<style>
+	/* TOC 目录导航样式 - 确保稳定的固定定位 */
+	#toc-wrapper {
+		position: fixed;
+		top: 0;
+		right: 0;
+		z-index: 40;
+		opacity: 1;
+		transition: opacity 0.4s ease;
+		/* 使用 contain 隔离渲染，防止背景动画影响 TOC 位置 */
+		contain: layout style;
+	}
+	
+	/* 确保 TOC 内部容器的位置稳定 */
+	#toc-inner-wrapper {
+		/* 强制创建独立合成层，避免重绘 */
+		transform: translateZ(0);
+		backface-visibility: hidden;
+	}
+</style>

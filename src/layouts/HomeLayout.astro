@@ -77,17 +77,13 @@ const showTOC = siteConfig.toc.enable && headings.length > 0;
 
 	<!-- TOC - 目录（仅当有标题时显示） -->
 	{showTOC && (
-		<div class="fixed w-full z-40 hidden xl:block top-0 left-0 right-0 pointer-events-none">
-			<div class="relative max-w-[var(--page-width)] mx-auto">
-				<div id="toc-wrapper" class:list={["hidden xl:block transition absolute top-0 -right-[var(--toc-width)] w-[var(--toc-width)] items-center pointer-events-auto",
-					{"toc-hidden": showHeroBanner}]}>
-					<div id="toc-inner-wrapper" class="fixed top-14 w-[var(--toc-width)] h-[calc(100vh_-_10rem)] overflow-y-scroll overflow-x-hidden hide-scrollbar">
-						<div id="toc" class="w-full h-full transition-swup-fade">
-							<div class="h-8 w-full"></div>
-							<TOC headings={headings} />
-							<div class="h-8 w-full"></div>
-						</div>
-					</div>
+		<div id="toc-wrapper" class:list={["hidden xl:block transition pointer-events-auto",
+			{"toc-hidden": showHeroBanner}]}>
+			<div id="toc-inner-wrapper" class="fixed top-14 right-[1rem] w-[var(--toc-width)] h-[calc(100vh_-_10rem)] overflow-y-scroll overflow-x-hidden hide-scrollbar will-change-transform">
+				<div id="toc" class="w-full h-full transition-swup-fade">
+					<div class="h-8 w-full"></div>
+					<TOC headings={headings} />
+					<div class="h-8 w-full"></div>
 				</div>
 			</div>
 		</div>
@@ -128,16 +124,27 @@ const showTOC = siteConfig.toc.enable && headings.length > 0;
 
 	/* TOC 目录导航样式 */
 	#toc-wrapper {
+		position: fixed;
+		top: 0;
+		right: 0;
+		z-index: 40;
 		opacity: 1;
-		transform: translateX(0);
 		transition: opacity 0.4s ease, transform 0.4s ease;
+		/* 使用 contain 隔离渲染，防止背景动画影响 TOC 位置 */
+		contain: layout style;
 	}
 
 	/* 当 HeroBanner 可见时隐藏 TOC */
 	#toc-wrapper.toc-hidden {
 		opacity: 0;
-		transform: translateX(20px);
 		pointer-events: none !important;
+	}
+	
+	/* 确保 TOC 内部容器的位置稳定 */
+	#toc-inner-wrapper {
+		/* 强制创建独立合成层，避免重绘 */
+		transform: translateZ(0);
+		backface-visibility: hidden;
 	}
 </style>
 

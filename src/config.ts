@@ -41,7 +41,7 @@ export const siteConfig: SiteConfig = {
 
 	background: {
 		enable: true, // 是否启用背景图
-		src: "https://morbol.qus.moe/bg/classroom.gif", // 随机背景API（已添加缓存机制防止闪烁）
+		src: "https://morbol.qus.moe/bg/startrain.gif", // 随机背景API（已添加缓存机制防止闪烁）
 		position: "center", // 背景位置: 'top', 'center', 'bottom'
 		size: "cover", // 背景大小: 'cover', 'contain', 'auto'
 		repeat: "no-repeat", // 背景重复: 'no-repeat', 'repeat'
@@ -52,7 +52,7 @@ export const siteConfig: SiteConfig = {
 	// 加载动画配置
 	loadingScreen: {
 		enable: true, // 是否启用加载动画
-		src: "https://morbol.qus.moe/loading/bocchi_loading2.mp4", // 加载动画资源（支持图片/视频）
+		src: "https://morbol.qus.moe/loading/creeper_loading.gif", // 加载动画资源（支持图片/视频）
 		type: "auto", // 资源类型: 'image', 'video', 'auto'（自动识别）
 		text: "少女祈祷中...", // 加载提示文字
 		minDuration: 3000, // 最小显示时间（毫秒）：5秒 = 5000ms
