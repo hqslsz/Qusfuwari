@@ -22,6 +22,7 @@ export type SiteConfig = {
 	};
 	heroBanner?: HeroBannerConfig;
 	background: BackgroundConfig;
+	loadingScreen?: LoadingScreenConfig;
 	toc: {
 		enable: boolean;
 		depth: 1 | 2 | 3;
@@ -115,4 +116,12 @@ export interface HeroBannerConfig {
 	typingTexts?: string[]; // 打字机效果显示的文字数组
 	showParticles?: boolean; // 是否显示粒子效果
 	showScrollIndicator?: boolean; // 是否显示向下滚动指示器
+}
+
+export interface LoadingScreenConfig {
+	enable: boolean;
+	src: string; // 加载动画资源地址（支持图片或视频）
+	type?: "image" | "video" | "auto"; // 资源类型，auto 会根据扩展名自动判断
+	text?: string; // 加载提示文字
+	minDuration?: number; // 最小显示时间（毫秒），防止闪烁
 }

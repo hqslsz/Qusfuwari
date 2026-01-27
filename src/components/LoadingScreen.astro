@@ -1,0 +1,327 @@
+---
+/**
+ * LoadingScreen - 页面加载动画组件
+ * 
+ * 在页面首次加载时显示加载动画，当页面内容加载完成后自动淡出。
+ * 支持配置自定义加载图片或视频，以及提示文字。
+ */
+import { siteConfig } from '@/config';
+
+interface Props {
+	src?: string;
+	type?: 'image' | 'video' | 'auto';
+	text?: string;
+	minDuration?: number;
+}
+
+const config = siteConfig.loadingScreen;
+const {
+	src = config?.src || '',
+	type = config?.type || 'auto',
+	text = config?.text || '加载中...',
+	minDuration = config?.minDuration || 800
+} = Astro.props;
+
+// 如果加载动画未启用，则不渲染
+const isEnabled = config?.enable ?? false;
+
+// 根据文件扩展名或配置判断资源类型
+function getMediaType(url: string, configType: 'image' | 'video' | 'auto'): 'image' | 'video' {
+	if (configType !== 'auto') return configType;
+	
+	const ext = url.split('.').pop()?.toLowerCase() || '';
+	const videoExts = ['mp4', 'webm', 'ogg', 'mov'];
+	return videoExts.includes(ext) ? 'video' : 'image';
+}
+
+const mediaType = getMediaType(src, type);
+---
+
+{isEnabled && (
+	<div 
+		id="loading-screen"
+		class="loading-screen"
+		data-min-duration={minDuration}
+		aria-label="页面加载中"
+		role="progressbar"
+	>
+		<div class="loading-content">
+			{/* 加载媒体（图片或视频） */}
+			<div class="loading-media-wrapper">
+				{mediaType === 'video' ? (
+					<video 
+						src={src}
+						class="loading-media"
+						autoplay
+						loop
+						muted
+						playsinline
+						disablepictureinpicture
+					/>
+				) : (
+					<img 
+						src={src} 
+						alt="Loading" 
+						class="loading-media"
+						loading="eager"
+						decoding="async"
+					/>
+				)}
+			</div>
+			
+			{/* 进度条 */}
+			<div class="loading-bar-container">
+				<div class="loading-bar">
+					<div class="loading-bar-progress" id="loading-progress"></div>
+				</div>
+			</div>
+			
+			{/* 加载文字 */}
+			<p class="loading-text">{text}</p>
+		</div>
+	</div>
+)}
+
+<style>
+	.loading-screen {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100vw;
+		height: 100vh;
+		z-index: 9999;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: linear-gradient(
+			135deg,
+			oklch(0.98 0.01 var(--hue, 200)) 0%,
+			oklch(0.95 0.02 var(--hue, 200)) 50%,
+			oklch(0.92 0.03 var(--hue, 200)) 100%
+		);
+		opacity: 1;
+		visibility: visible;
+		transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+	}
+
+	.loading-screen.hidden {
+		opacity: 0;
+		visibility: hidden;
+		pointer-events: none;
+	}
+
+	.loading-content {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1.5rem;
+		animation: fadeInUp 0.6s ease-out;
+	}
+
+	.loading-media-wrapper {
+		width: 160px;
+		height: 160px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 1rem;
+		background: rgba(255, 255, 255, 0.8);
+		box-shadow: 
+			0 8px 32px rgba(0, 0, 0, 0.1),
+			0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+		backdrop-filter: blur(8px);
+		overflow: hidden;
+		animation: pulse 2s ease-in-out infinite;
+	}
+
+	.loading-media {
+		width: 140px;
+		height: 140px;
+		object-fit: cover;
+		border-radius: 0.75rem;
+	}
+
+	/* 视频特定样式 */
+	video.loading-media {
+		object-fit: contain;
+		background: transparent;
+	}
+
+	.loading-bar-container {
+		width: 200px;
+		padding: 0 1rem;
+	}
+
+	.loading-bar {
+		width: 100%;
+		height: 6px;
+		background: rgba(0, 0, 0, 0.1);
+		border-radius: 999px;
+		overflow: hidden;
+		box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+	}
+
+	.loading-bar-progress {
+		height: 100%;
+		width: 0%;
+		background: linear-gradient(
+			90deg,
+			oklch(0.7 0.15 var(--hue, 200)) 0%,
+			oklch(0.6 0.18 var(--hue, 200)) 50%,
+			oklch(0.7 0.15 var(--hue, 200)) 100%
+		);
+		border-radius: 999px;
+		transition: width 0.3s ease-out;
+		animation: shimmer 1.5s ease-in-out infinite;
+		background-size: 200% 100%;
+	}
+
+	.loading-text {
+		font-size: 0.875rem;
+		color: oklch(0.5 0.02 var(--hue, 200));
+		font-weight: 500;
+		letter-spacing: 0.05em;
+		margin: 0;
+		animation: textPulse 1.5s ease-in-out infinite;
+	}
+
+	@keyframes fadeInUp {
+		from {
+			opacity: 0;
+			transform: translateY(20px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@keyframes pulse {
+		0%, 100% {
+			transform: scale(1);
+			box-shadow: 
+				0 8px 32px rgba(0, 0, 0, 0.1),
+				0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+		}
+		50% {
+			transform: scale(1.02);
+			box-shadow: 
+				0 12px 40px rgba(0, 0, 0, 0.15),
+				0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+		}
+	}
+
+	@keyframes shimmer {
+		0% {
+			background-position: 200% 0;
+		}
+		100% {
+			background-position: -200% 0;
+		}
+	}
+
+	@keyframes textPulse {
+		0%, 100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.6;
+		}
+	}
+
+	/* 响应式适配 */
+	@media (max-width: 640px) {
+		.loading-media-wrapper {
+			width: 120px;
+			height: 120px;
+		}
+
+		.loading-media {
+			width: 100px;
+			height: 100px;
+		}
+
+		.loading-bar-container {
+			width: 160px;
+		}
+
+		.loading-text {
+			font-size: 0.75rem;
+		}
+	}
+
+	/* 减少动画偏好 */
+	@media (prefers-reduced-motion: reduce) {
+		.loading-screen,
+		.loading-content,
+		.loading-media-wrapper,
+		.loading-bar-progress,
+		.loading-text {
+			animation: none;
+			transition: none;
+		}
+	}
+</style>
+
+<script is:inline>
+(function() {
+	const loadingScreen = document.getElementById('loading-screen');
+	if (!loadingScreen) return;
+
+	const progressBar = document.getElementById('loading-progress');
+	const minDuration = parseInt(loadingScreen.dataset.minDuration || '800', 10);
+	const startTime = Date.now();
+	
+	let progress = 0;
+	let progressInterval;
+
+	// 模拟进度条动画
+	function updateProgress() {
+		if (progress < 90) {
+			// 快速增长到 30%，然后逐渐变慢
+			const increment = progress < 30 ? 8 : (progress < 60 ? 4 : 2);
+			progress = Math.min(90, progress + increment * Math.random());
+			if (progressBar) {
+				progressBar.style.width = progress + '%';
+			}
+		}
+	}
+
+	progressInterval = setInterval(updateProgress, 100);
+
+	// 隐藏加载屏幕
+	function hideLoadingScreen() {
+		const elapsedTime = Date.now() - startTime;
+		const remainingTime = Math.max(0, minDuration - elapsedTime);
+
+		// 完成进度条动画
+		if (progressBar) {
+			progressBar.style.width = '100%';
+		}
+
+		setTimeout(() => {
+			clearInterval(progressInterval);
+			loadingScreen.classList.add('hidden');
+			
+			// 完全隐藏后移除 DOM 元素以释放资源
+			setTimeout(() => {
+				loadingScreen.remove();
+			}, 500);
+		}, remainingTime + 200); // 额外 200ms 让进度条完成动画
+	}
+
+	// 监听页面加载完成
+	if (document.readyState === 'complete') {
+		hideLoadingScreen();
+	} else {
+		window.addEventListener('load', hideLoadingScreen);
+	}
+
+	// 备用：超时后强制隐藏（防止资源加载失败导致卡住）
+	setTimeout(() => {
+		if (loadingScreen && !loadingScreen.classList.contains('hidden')) {
+			hideLoadingScreen();
+		}
+	}, 10000); // 10秒超时
+})();
+</script>
