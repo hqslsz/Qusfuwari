@@ -1,11 +1,12 @@
 ---
 title: 禁忌炼成：电气工学的完全体
 published: 2025-12-15
-description: "新的画作，已上传pixiv，但还是挂下博客，嘿嘿嘿"
+description: 新的画作，已上传pixiv，但还是挂下博客，嘿嘿嘿
 tags:
   - pixelart
   - 玩
 category: 玩
+image: https://xn--wnu.icu/wqt-of-ee/quasi2317.png
 draft: false
 ---
 = 摘自『ISCC2024 / 精装四合一 』=

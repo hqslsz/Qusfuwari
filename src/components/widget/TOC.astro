@@ -74,8 +74,9 @@ class TableOfContents extends HTMLElement {
 
     constructor() {
         super();
+        // rootMargin 排除顶部导航栏区域（约 5rem = 80px），与 scroll-margin-top 一致
         this.observer = new IntersectionObserver(
-            this.markVisibleSection, { threshold: 0 }
+            this.markVisibleSection, { threshold: 0, rootMargin: '-80px 0px 0px 0px' }
         );
     };
 

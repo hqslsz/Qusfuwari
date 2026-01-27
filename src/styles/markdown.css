@@ -4,6 +4,9 @@
     }
 
     h1, h2, h3, h4, h5, h6 {
+        /* 点击 TOC 锚点跳转时，预留导航栏高度，防止标题被遮挡 */
+        scroll-margin-top: 5rem;
+        
         .anchor {
             @apply transition -m-0.5 ml-[0.2ch] p-0.5 select-none opacity-0 no-underline !important;
 

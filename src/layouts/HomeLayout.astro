@@ -77,10 +77,11 @@ const showTOC = siteConfig.toc.enable && headings.length > 0;
 
 	<!-- TOC - 目录（仅当有标题时显示） -->
 	{showTOC && (
-		<div class="absolute w-full z-0 hidden 2xl:block" style={showHeroBanner ? "top: 100vh;" : "top: 5.5rem;"}>
+		<div class="fixed w-full z-40 hidden 2xl:block top-0 left-0 right-0 pointer-events-none">
 			<div class="relative max-w-[var(--page-width)] mx-auto">
-				<div id="toc-wrapper" class="hidden lg:block transition absolute top-0 -right-[var(--toc-width)] w-[var(--toc-width)] items-center">
-					<div id="toc-inner-wrapper" class="fixed top-14 w-[var(--toc-width)] h-[calc(100vh_-_20rem)] overflow-y-scroll overflow-x-hidden hide-scrollbar">
+				<div id="toc-wrapper" class:list={["hidden lg:block transition absolute top-0 -right-[var(--toc-width)] w-[var(--toc-width)] items-center pointer-events-auto",
+					{"toc-hidden": showHeroBanner}]}>
+					<div id="toc-inner-wrapper" class="fixed top-14 w-[var(--toc-width)] h-[calc(100vh_-_10rem)] overflow-y-scroll overflow-x-hidden hide-scrollbar">
 						<div id="toc" class="w-full h-full transition-swup-fade">
 							<div class="h-8 w-full"></div>
 							<TOC headings={headings} />
@@ -124,19 +125,34 @@ const showTOC = siteConfig.toc.enable && headings.length > 0;
 		background: var(--card-bg);
 		backdrop-filter: blur(10px);
 	}
+
+	/* TOC 目录导航样式 */
+	#toc-wrapper {
+		opacity: 1;
+		transform: translateX(0);
+		transition: opacity 0.4s ease, transform 0.4s ease;
+	}
+
+	/* 当 HeroBanner 可见时隐藏 TOC */
+	#toc-wrapper.toc-hidden {
+		opacity: 0;
+		transform: translateX(20px);
+		pointer-events: none !important;
+	}
 </style>
 
 <script>
-	// 监听滚动事件，控制导航栏显示和 body 的 scrolled 类
+	// 监听滚动事件，控制导航栏、TOC 显示和 body 的 scrolled 类
 	function handleScroll() {
 		const heroBanner = document.getElementById('hero-banner');
 		const topRow = document.getElementById('top-row');
+		const tocWrapper = document.getElementById('toc-wrapper');
 		
 		// 检查 HeroBanner 是否显示（不是 hidden）
 		const isHeroBannerVisible = heroBanner && !heroBanner.classList.contains('hidden');
 		const heroHeight = isHeroBannerVisible ? heroBanner.offsetHeight : 0;
 		
-		// 滚动阈值：当滚动超过 HeroBanner 高度的 70% 时显示导航栏
+		// 滚动阈值：当滚动超过 HeroBanner 高度的 70% 时显示导航栏和 TOC
 		const scrollThreshold = heroHeight * 0.7;
 		const hasScrolledPastBanner = window.scrollY > scrollThreshold;
 		
@@ -148,6 +164,17 @@ const showTOC = siteConfig.toc.enable && headings.length > 0;
 			} else {
 				// HeroBanner 可见且没有滚动过，隐藏导航栏
 				topRow.classList.add('navbar-hidden');
+			}
+		}
+		
+		// 控制 TOC 目录显示/隐藏
+		if (tocWrapper) {
+			if (!isHeroBannerVisible || hasScrolledPastBanner) {
+				// 如果没有 HeroBanner 或者滚动过了，显示 TOC
+				tocWrapper.classList.remove('toc-hidden');
+			} else {
+				// HeroBanner 可见且没有滚动过，隐藏 TOC
+				tocWrapper.classList.add('toc-hidden');
 			}
 		}
 		
