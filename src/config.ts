@@ -51,7 +51,7 @@ export const siteConfig: SiteConfig = {
 
 	// 加载动画配置
 	loadingScreen: {
-		enable: true, // 是否启用加载动画
+		enable: false, // 已关闭：加载动画严重影响 LCP 和 SI 性能指标
 		src: "https://morbol.qus.moe/loading/creeper_loading.gif", // 加载动画资源（支持图片/视频）
 		type: "auto", // 资源类型: 'image', 'video', 'auto'（自动识别）
 		text: "少女祈祷中...", // 加载提示文字

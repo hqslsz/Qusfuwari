@@ -137,7 +137,7 @@ const showScrollIndicator = heroBannerConfig?.showScrollIndicator ?? true;
 		}
 	}
 
-	// 粒子效果
+	// 粒子效果（性能优化版：减少粒子数、跳过不可见帧、避免频繁字符串拼接）
 	class ParticleSystem {
 		private canvas: HTMLCanvasElement | null = null;
 		private ctx: CanvasRenderingContext2D | null = null;
@@ -150,6 +150,8 @@ const showScrollIndicator = heroBannerConfig?.showScrollIndicator ?? true;
 			opacity: number;
 		}> = [];
 		private animationId: number = 0;
+		private isVisible: boolean = true;
+		private resizeHandler: () => void;
 
 		constructor(containerId: string) {
 			const container = document.getElementById(containerId);
@@ -159,7 +161,7 @@ const showScrollIndicator = heroBannerConfig?.showScrollIndicator ?? true;
 			this.canvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;';
 			container.appendChild(this.canvas);
 			
-			const ctx = this.canvas.getContext('2d');
+			const ctx = this.canvas.getContext('2d', { alpha: true });
 			if (!ctx) return;
 			this.ctx = ctx;
 
@@ -167,7 +169,14 @@ const showScrollIndicator = heroBannerConfig?.showScrollIndicator ?? true;
 			this.createParticles();
 			this.animate();
 
-			window.addEventListener('resize', () => this.resize());
+			this.resizeHandler = () => this.resize();
+			window.addEventListener('resize', this.resizeHandler);
+
+			// 页面不可见时暂停动画，节省 CPU
+			document.addEventListener('visibilitychange', () => {
+				this.isVisible = !document.hidden;
+				if (this.isVisible) this.animate();
+			});
 		}
 
 		private resize() {
@@ -178,7 +187,8 @@ const showScrollIndicator = heroBannerConfig?.showScrollIndicator ?? true;
 
 		private createParticles() {
 			if (!this.canvas) return;
-			const particleCount = Math.floor((this.canvas.width * this.canvas.height) / 15000);
+			// 减少粒子密度：每 25000px² 一个粒子（原来 15000），上限 60 个
+			const particleCount = Math.min(60, Math.floor((this.canvas.width * this.canvas.height) / 25000));
 			this.particles = [];
 			
 			for (let i = 0; i < particleCount; i++) {
@@ -194,15 +204,18 @@ const showScrollIndicator = heroBannerConfig?.showScrollIndicator ?? true;
 		}
 
 		private animate() {
-			if (!this.ctx || !this.canvas) return;
+			if (!this.ctx || !this.canvas || !this.isVisible) return;
 			
 			this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
 			const ctx = this.ctx;
 			const canvasWidth = this.canvas.width;
 			const canvasHeight = this.canvas.height;
+			const CONNECTION_DIST = 120;
+			const CONNECTION_DIST_SQ = CONNECTION_DIST * CONNECTION_DIST;
 
-			this.particles.forEach((p, i) => {
+			for (let i = 0; i < this.particles.length; i++) {
+				const p = this.particles[i];
 				p.x += p.vx;
 				p.y += p.vy;
 
@@ -211,32 +224,34 @@ const showScrollIndicator = heroBannerConfig?.showScrollIndicator ?? true;
 
 				ctx.beginPath();
 				ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-				ctx.fillStyle = `rgba(255, 255, 255, ${p.opacity})`;
+				ctx.fillStyle = `rgba(255,255,255,${p.opacity})`;
 				ctx.fill();
 
-				// 连接附近的粒子
+				// 使用距离平方比较避免 sqrt 开销
 				for (let j = i + 1; j < this.particles.length; j++) {
 					const p2 = this.particles[j];
 					const dx = p.x - p2.x;
 					const dy = p.y - p2.y;
-					const distance = Math.sqrt(dx * dx + dy * dy);
+					const distSq = dx * dx + dy * dy;
 
-					if (distance < 120) {
+					if (distSq < CONNECTION_DIST_SQ) {
+						const dist = Math.sqrt(distSq);
 						ctx.beginPath();
 						ctx.moveTo(p.x, p.y);
 						ctx.lineTo(p2.x, p2.y);
-						ctx.strokeStyle = `rgba(255, 255, 255, ${0.15 * (1 - distance / 120)})`;
+						ctx.strokeStyle = `rgba(255,255,255,${(0.15 * (1 - dist / CONNECTION_DIST)).toFixed(3)})`;
 						ctx.lineWidth = 0.5;
 						ctx.stroke();
 					}
 				}
-			});
+			}
 
 			this.animationId = requestAnimationFrame(() => this.animate());
 		}
 
 		destroy() {
 			cancelAnimationFrame(this.animationId);
+			window.removeEventListener('resize', this.resizeHandler);
 			this.canvas?.remove();
 		}
 	}

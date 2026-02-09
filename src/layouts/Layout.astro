@@ -98,7 +98,9 @@ const bannerOffset =
 		<!-- 霞鹜文楷 - 中文手写风格字体（优化加载性能） -->
 		<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
 		<link rel="preload" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.1.0/lxgwwenkaiscreen.woff2" as="font" type="font/woff2" crossorigin />
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.1.0/style.css" />
+		<!-- 异步加载字体CSS，避免阻塞渲染 -->
+		<link rel="preload" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.1.0/style.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+		<noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.1.0/style.css" /></noscript>
 		<style>
 			/* 确保字体加载时显示回退字体，避免FOIT（Flash of Invisible Text）*/
 			@font-face {
@@ -159,28 +161,28 @@ const bannerOffset =
 							if (isCacheValid) {
 								// 使用缓存的图片URL
 								imageUrl = cachedBg;
-								requestAnimationFrame(() => {
-									document.documentElement.style.setProperty('--bg-url', `url("${imageUrl}")`);
-								});
+								document.documentElement.style.setProperty('--bg-url', `url("${imageUrl}")`);
 							}
+						}
+						
+						// 显示背景的通用函数
+						function showBackground() {
+							requestAnimationFrame(() => {
+								document.body.classList.add('bg-loaded');
+								document.documentElement.style.setProperty('--card-bg', 'var(--card-bg-transparent)');
+								document.documentElement.style.setProperty('--float-panel-bg', 'var(--float-panel-bg-transparent)');
+							});
 						}
 						
 						const img = new Image();
 						img.onload = function() {
-							// 使用双 rAF 确保浏览器完成当前帧的渲染，避免闪烁
-							requestAnimationFrame(() => {
-								requestAnimationFrame(() => {
-									// 如果是随机API，缓存实际加载的图片URL
-									if (isRandomApi && !sessionStorage.getItem('cached-bg-url')) {
-										sessionStorage.setItem('cached-bg-url', img.src);
-										sessionStorage.setItem('cached-bg-time', Date.now().toString());
-										document.documentElement.style.setProperty('--bg-url', `url("${img.src}")`);
-									}
-									document.body.classList.add('bg-loaded');
-									document.documentElement.style.setProperty('--card-bg', 'var(--card-bg-transparent)');
-									document.documentElement.style.setProperty('--float-panel-bg', 'var(--float-panel-bg-transparent)');
-								});
-							});
+							// 如果是随机API，缓存实际加载的图片URL
+							if (isRandomApi && !sessionStorage.getItem('cached-bg-url')) {
+								sessionStorage.setItem('cached-bg-url', img.src);
+								sessionStorage.setItem('cached-bg-time', Date.now().toString());
+								document.documentElement.style.setProperty('--bg-url', `url("${img.src}")`);
+							}
+							showBackground();
 						};
 						img.onerror = function() {
 							console.warn('Background image failed to load');
@@ -190,18 +192,12 @@ const bannerOffset =
 						};
 						img.src = imageUrl;
 						
-						// 超时处理：3秒后强制启用透明效果
+						// 超时处理：2秒后强制启用透明效果（缩短超时时间提升体验）
 						setTimeout(() => {
 							if (!document.body.classList.contains('bg-loaded')) {
-								requestAnimationFrame(() => {
-									requestAnimationFrame(() => {
-										document.body.classList.add('bg-loaded');
-										document.documentElement.style.setProperty('--card-bg', 'var(--card-bg-transparent)');
-										document.documentElement.style.setProperty('--float-panel-bg', 'var(--float-panel-bg-transparent)');
-									});
-								});
+								showBackground();
 							}
-						}, 3000);
+						}, 2000);
 					}
 				}
 			})();
@@ -266,6 +262,11 @@ const bannerOffset =
 			}
 		</style>  <!-- defines global css variables. This will be applied to <html> <body> and some other elements idk why -->
 
+
+		<!-- 预加载背景图以加速 LCP -->
+		{siteConfig.background?.enable && siteConfig.background?.src && (
+			<link rel="preload" href={siteConfig.background.src} as="image" />
+		)}
 
 		<slot name="head"></slot>
 
