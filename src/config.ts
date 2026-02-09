@@ -35,7 +35,7 @@ export const siteConfig: SiteConfig = {
 
 	background: {
 		enable: true, // 是否启用背景图
-		src: "imgs/startrain.gif", // 随机背景API（已添加缓存机制防止闪烁）
+		src: "assets/imgs/startrain.gif",
 		position: "center", // 背景位置: 'top', 'center', 'bottom'
 		size: "cover", // 背景大小: 'cover', 'contain', 'auto'
 		repeat: "no-repeat", // 背景重复: 'no-repeat', 'repeat'

@@ -2,7 +2,6 @@
 title: moe域名揭牌仪式和最近更新的许许多多小功能
 published: 2025-10-18
 description: qus.moe现已启用
-image: https://xn--wnu.icu/moedomain/moe.png
 tags:
   - 杂
   - 发情
