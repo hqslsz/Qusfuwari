@@ -1,62 +1,38 @@
 ---
 /**
- * HeroBanner 组件 - 类似 WordPress Argon 主题的全屏英雄横幅
- * 特点：透明背景（使用现有背景图）、头像居中、打字机效果标语、向下滚动箭头、粒子效果
+ * HeroBanner 组件 - ASCII Logo 交互式全屏横幅
+ * 特点：直接渲染用户自定义的 ASCII Art 图案，鼠标滑过产生排斥效果
  */
 import { Icon } from "astro-icon/components";
-import { profileConfig, siteConfig } from "../config";
+// 从 txt 文件读取 ASCII Art，格式化器不会动纯文本文件
+import asciiLogoFile from "../ascii-logo.txt?raw";
+import { siteConfig } from "../config";
 
 interface Props {
 	class?: string;
 }
 
 const { class: className } = Astro.props;
-const config = profileConfig;
 const heroBannerConfig = siteConfig.heroBanner;
-
-// 打字机效果的文字数组 - 优先使用配置，否则使用默认值
-const typingTexts = heroBannerConfig?.typingTexts || [
-	config.bio || "探索无限可能",
-	"欢迎来到我的博客",
-	"记录生活，分享技术",
-];
-
-const showParticles = heroBannerConfig?.showParticles ?? true;
 const showScrollIndicator = heroBannerConfig?.showScrollIndicator ?? true;
+
+// 优先使用 config 中的配置，否则从 txt 文件读取
+const asciiLogoRaw: string =
+	heroBannerConfig?.asciiLogo || asciiLogoFile || siteConfig.title;
+const asciiLogo: string[] = asciiLogoRaw
+	.split("\n")
+	.filter((line) => line.trimEnd().length > 0);
 ---
 
-<section id="hero-banner" class:list={["hero-banner", className]}>
-	<!-- 半透明遮罩层（让现有背景图透出） -->
+<section id="hero-banner" class:list={["hero-banner", className]} data-ascii-logo={asciiLogoRaw}>
+	<!-- 背景层 -->
 	<div class="hero-bg">
 		<div class="hero-overlay"></div>
-		{showParticles && <div class="hero-particles" id="particles"></div>}
 	</div>
 
-	<!-- 主要内容 -->
+	<!-- ASCII Logo Canvas -->
 	<div class="hero-content">
-		<!-- 网站标题 -->
-		<h1 class="hero-title">{siteConfig.title}</h1>
-
-		<!-- 打字机效果标语 -->
-		<div class="hero-subtitle">
-			<span class="typing-text" id="typing-text"></span>
-			<span class="typing-cursor">|</span>
-		</div>
-
-		<!-- 社交链接 -->
-		<div class="hero-social">
-			{config.links.map(item => (
-				<a 
-					href={item.url} 
-					target="_blank" 
-					rel="noopener noreferrer"
-					aria-label={item.name}
-					class="hero-social-link"
-				>
-					<Icon name={item.icon} class="text-2xl" />
-				</a>
-			))}
-		</div>
+		<canvas id="ascii-canvas" class="ascii-canvas"></canvas>
 	</div>
 
 	<!-- 向下滚动指示器 -->
@@ -71,189 +47,251 @@ const showScrollIndicator = heroBannerConfig?.showScrollIndicator ?? true;
 	)}
 </section>
 
-<!-- 传递配置到客户端 -->
-<script define:vars={{ typingTexts, showParticles }}>
-	window.heroTypingTexts = typingTexts;
-	window.heroShowParticles = showParticles;
-</script>
-
 <script>
-	// 打字机效果
-	class TypeWriter {
-		private texts: string[];
-		private element: HTMLElement | null;
-		private textIndex: number = 0;
-		private charIndex: number = 0;
-		private isDeleting: boolean = false;
-		private typeSpeed: number = 100;
-		private deleteSpeed: number = 50;
-		private pauseTime: number = 2000;
-		private timeoutId: number | null = null;
-		private isDestroyed: boolean = false;
-
-		constructor(elementId: string, texts: string[]) {
-			this.element = document.getElementById(elementId);
-			this.texts = texts;
-			if (this.element && texts.length > 0) {
-				this.type();
-			}
-		}
-
-		private type() {
-			// 如果已被销毁，停止执行
-			if (this.isDestroyed || !this.element) return;
-
-			const currentText = this.texts[this.textIndex];
-			
-			if (this.isDeleting) {
-				this.charIndex--;
-				this.element.textContent = currentText.substring(0, this.charIndex);
-			} else {
-				this.charIndex++;
-				this.element.textContent = currentText.substring(0, this.charIndex);
-			}
-
-			let nextDelay = this.isDeleting ? this.deleteSpeed : this.typeSpeed;
-
-			if (!this.isDeleting && this.charIndex === currentText.length) {
-				nextDelay = this.pauseTime;
-				this.isDeleting = true;
-			} else if (this.isDeleting && this.charIndex === 0) {
-				this.isDeleting = false;
-				this.textIndex = (this.textIndex + 1) % this.texts.length;
-				nextDelay = 500;
-			}
-
-			this.timeoutId = window.setTimeout(() => this.type(), nextDelay);
-		}
-
-		destroy() {
-			this.isDestroyed = true;
-			if (this.timeoutId !== null) {
-				clearTimeout(this.timeoutId);
-				this.timeoutId = null;
-			}
-			this.element = null;
-		}
-	}
-
-	// 粒子效果（性能优化版：减少粒子数、跳过不可见帧、避免频繁字符串拼接）
-	class ParticleSystem {
+	/**
+	 * ASCII Art 粒子系统
+	 * 直接读取用户自定义的 ASCII Art 图案，每个非空字符变成一个可交互的粒子
+	 * 字体大小自动适配 banner 尺寸
+	 */
+	class AsciiLogoSystem {
 		private canvas: HTMLCanvasElement | null = null;
 		private ctx: CanvasRenderingContext2D | null = null;
-		private particles: Array<{
-			x: number;
-			y: number;
-			vx: number;
-			vy: number;
-			size: number;
-			opacity: number;
-		}> = [];
+		private particles: AsciiParticle[] = [];
+		private mouse = { x: -9999, y: -9999 };
 		private animationId: number = 0;
 		private isVisible: boolean = true;
-		private resizeHandler: () => void;
+		private isDestroyed: boolean = false;
+		private resizeHandler: () => void = () => {};
+		private mouseMoveHandler: (e: MouseEvent) => void = () => {};
+		private mouseLeaveHandler: () => void = () => {};
+		private touchMoveHandler: (e: TouchEvent) => void = () => {};
+		private touchEndHandler: () => void = () => {};
+		private lines: string[] = [];
+		private dpr: number = 1;
 
-		constructor(containerId: string) {
-			const container = document.getElementById(containerId);
-			if (!container) return;
+		constructor(canvasId: string, lines: string[]) {
+			this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
+			this.lines = lines;
 
-			this.canvas = document.createElement('canvas');
-			this.canvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;';
-			container.appendChild(this.canvas);
-			
+			if (!this.canvas) return;
+
 			const ctx = this.canvas.getContext('2d', { alpha: true });
 			if (!ctx) return;
 			this.ctx = ctx;
 
+			this.dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+			this.resizeHandler = () => {
+				this.resize();
+				this.createParticles();
+			};
+
+			this.mouseMoveHandler = (e: MouseEvent) => {
+				if (!this.canvas) return;
+				const rect = this.canvas.getBoundingClientRect();
+				this.mouse.x = (e.clientX - rect.left) * this.dpr;
+				this.mouse.y = (e.clientY - rect.top) * this.dpr;
+			};
+
+			this.mouseLeaveHandler = () => {
+				this.mouse.x = -9999;
+				this.mouse.y = -9999;
+			};
+
+			this.touchMoveHandler = (e: TouchEvent) => {
+				if (!this.canvas || e.touches.length === 0) return;
+				const rect = this.canvas.getBoundingClientRect();
+				this.mouse.x = (e.touches[0].clientX - rect.left) * this.dpr;
+				this.mouse.y = (e.touches[0].clientY - rect.top) * this.dpr;
+			};
+
+			this.touchEndHandler = () => {
+				this.mouse.x = -9999;
+				this.mouse.y = -9999;
+			};
+
 			this.resize();
 			this.createParticles();
+			this.bindEvents();
 			this.animate();
 
-			this.resizeHandler = () => this.resize();
-			window.addEventListener('resize', this.resizeHandler);
-
-			// 页面不可见时暂停动画，节省 CPU
+			// 页面不可见时暂停动画
 			document.addEventListener('visibilitychange', () => {
 				this.isVisible = !document.hidden;
-				if (this.isVisible) this.animate();
+				if (this.isVisible && !this.isDestroyed) this.animate();
 			});
 		}
 
 		private resize() {
 			if (!this.canvas) return;
-			this.canvas.width = this.canvas.offsetWidth;
-			this.canvas.height = this.canvas.offsetHeight;
+			const parent = this.canvas.parentElement;
+			if (!parent) return;
+			const w = parent.clientWidth;
+			const h = parent.clientHeight;
+			this.canvas.width = w * this.dpr;
+			this.canvas.height = h * this.dpr;
+			this.canvas.style.width = `${w}px`;
+			this.canvas.style.height = `${h}px`;
 		}
 
 		private createParticles() {
-			if (!this.canvas) return;
-			// 减少粒子密度：每 25000px² 一个粒子（原来 15000），上限 60 个
-			const particleCount = Math.min(60, Math.floor((this.canvas.width * this.canvas.height) / 25000));
+			if (!this.canvas || !this.ctx) return;
 			this.particles = [];
-			
-			for (let i = 0; i < particleCount; i++) {
-				this.particles.push({
-					x: Math.random() * this.canvas.width,
-					y: Math.random() * this.canvas.height,
-					vx: (Math.random() - 0.5) * 0.5,
-					vy: (Math.random() - 0.5) * 0.5,
-					size: Math.random() * 2 + 1,
-					opacity: Math.random() * 0.5 + 0.2
-				});
+
+			const canvasW = this.canvas.width;
+			const canvasH = this.canvas.height;
+
+			if (this.lines.length === 0) return;
+
+			// 计算 ASCII Art 的行数和最大列数
+			const rows = this.lines.length;
+			const cols = Math.max(...this.lines.map(l => l.length));
+
+			if (rows === 0 || cols === 0) return;
+
+			// 自动计算字体大小，使 ASCII Art 适配 canvas
+			// 留出上下左右各 15% 的边距
+			const marginX = canvasW * 0.15;
+			const marginY = canvasH * 0.15;
+			const availW = canvasW - marginX * 2;
+			const availH = canvasH - marginY * 2;
+
+			// 等宽字体的宽高比约为 0.6
+			const charAspect = 0.6;
+			// 根据可用空间计算字体大小
+			const fontSizeByWidth = availW / (cols * charAspect);
+			const fontSizeByHeight = availH / rows;
+			const fontSize = Math.min(fontSizeByWidth, fontSizeByHeight);
+
+			// 实际字符间距
+			const charW = fontSize * charAspect;
+			const charH = fontSize;
+
+			// 计算整个 ASCII Art 的实际宽高，用于居中
+			const totalW = cols * charW;
+			const totalH = rows * charH;
+			const offsetX = (canvasW - totalW) / 2;
+			const offsetY = (canvasH - totalH) / 2;
+
+			// 遍历每个字符，非空格字符创建粒子
+			for (let row = 0; row < rows; row++) {
+				const line = this.lines[row];
+				for (let col = 0; col < line.length; col++) {
+					const char = line[col];
+					if (char === ' ') continue; // 跳过空格
+
+					const x = offsetX + col * charW + charW / 2;
+					const y = offsetY + row * charH + charH / 2;
+
+					this.particles.push({
+						x: x,
+						y: y,
+						originX: x,
+						originY: y,
+						vx: 0,
+						vy: 0,
+						char: char,
+						fontSize: fontSize,
+						color: `rgba(255, 255, 255, ${0.75 + Math.random() * 0.25})`,
+					});
+				}
+			}
+		}
+
+		private bindEvents() {
+			window.addEventListener('resize', this.resizeHandler);
+
+			// 使用 hero-banner 容器监听事件
+			const heroBanner = document.getElementById('hero-banner');
+			const target = heroBanner || this.canvas;
+			if (target) {
+				target.addEventListener('mousemove', this.mouseMoveHandler);
+				target.addEventListener('mouseleave', this.mouseLeaveHandler);
+				target.addEventListener('touchmove', this.touchMoveHandler, { passive: true });
+				target.addEventListener('touchend', this.touchEndHandler);
 			}
 		}
 
 		private animate() {
-			if (!this.ctx || !this.canvas || !this.isVisible) return;
-			
-			this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+			if (!this.ctx || !this.canvas || !this.isVisible || this.isDestroyed) return;
 
 			const ctx = this.ctx;
-			const canvasWidth = this.canvas.width;
-			const canvasHeight = this.canvas.height;
-			const CONNECTION_DIST = 120;
-			const CONNECTION_DIST_SQ = CONNECTION_DIST * CONNECTION_DIST;
+			const canvasW = this.canvas.width;
+			const canvasH = this.canvas.height;
+
+			ctx.clearRect(0, 0, canvasW, canvasH);
+
+			const mouseRadius = 80 * this.dpr; // 鼠标影响半径
+			const mouseRadiusSq = mouseRadius * mouseRadius;
+			const repulsionForce = 6; // 排斥力强度
+			const friction = 0.85; // 摩擦力
+			const returnSpeed = 0.08; // 回归速度
 
 			for (let i = 0; i < this.particles.length; i++) {
 				const p = this.particles[i];
+
+				// 鼠标排斥力
+				const dx = p.x - this.mouse.x;
+				const dy = p.y - this.mouse.y;
+				const distSq = dx * dx + dy * dy;
+
+				if (distSq < mouseRadiusSq && distSq > 0) {
+					const dist = Math.sqrt(distSq);
+					const force = (mouseRadius - dist) / mouseRadius * repulsionForce;
+					const angle = Math.atan2(dy, dx);
+					p.vx += Math.cos(angle) * force;
+					p.vy += Math.sin(angle) * force;
+				}
+
+				// 回归原位的弹性力
+				p.vx += (p.originX - p.x) * returnSpeed;
+				p.vy += (p.originY - p.y) * returnSpeed;
+
+				// 摩擦力
+				p.vx *= friction;
+				p.vy *= friction;
+
+				// 更新位置
 				p.x += p.vx;
 				p.y += p.vy;
 
-				if (p.x < 0 || p.x > canvasWidth) p.vx *= -1;
-				if (p.y < 0 || p.y > canvasHeight) p.vy *= -1;
-
-				ctx.beginPath();
-				ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-				ctx.fillStyle = `rgba(255,255,255,${p.opacity})`;
-				ctx.fill();
-
-				// 使用距离平方比较避免 sqrt 开销
-				for (let j = i + 1; j < this.particles.length; j++) {
-					const p2 = this.particles[j];
-					const dx = p.x - p2.x;
-					const dy = p.y - p2.y;
-					const distSq = dx * dx + dy * dy;
-
-					if (distSq < CONNECTION_DIST_SQ) {
-						const dist = Math.sqrt(distSq);
-						ctx.beginPath();
-						ctx.moveTo(p.x, p.y);
-						ctx.lineTo(p2.x, p2.y);
-						ctx.strokeStyle = `rgba(255,255,255,${(0.15 * (1 - dist / CONNECTION_DIST)).toFixed(3)})`;
-						ctx.lineWidth = 0.5;
-						ctx.stroke();
-					}
-				}
+				// 绘制字符
+				ctx.fillStyle = p.color;
+				ctx.font = `${p.fontSize}px "Courier New", "Consolas", monospace`;
+				ctx.textAlign = 'center';
+				ctx.textBaseline = 'middle';
+				ctx.fillText(p.char, p.x, p.y);
 			}
 
 			this.animationId = requestAnimationFrame(() => this.animate());
 		}
 
 		destroy() {
+			this.isDestroyed = true;
 			cancelAnimationFrame(this.animationId);
 			window.removeEventListener('resize', this.resizeHandler);
-			this.canvas?.remove();
+
+			const heroBanner = document.getElementById('hero-banner');
+			const target = heroBanner || this.canvas;
+			if (target) {
+				target.removeEventListener('mousemove', this.mouseMoveHandler);
+				target.removeEventListener('mouseleave', this.mouseLeaveHandler);
+				target.removeEventListener('touchmove', this.touchMoveHandler);
+				target.removeEventListener('touchend', this.touchEndHandler);
+			}
 		}
+	}
+
+	interface AsciiParticle {
+		x: number;
+		y: number;
+		originX: number;
+		originY: number;
+		vx: number;
+		vy: number;
+		char: string;
+		fontSize: number;
+		color: string;
 	}
 
 	// 滚动到内容区域
@@ -268,72 +306,46 @@ const showScrollIndicator = heroBannerConfig?.showScrollIndicator ?? true;
 		}
 	}
 
-	// 防止重复初始化的标记
-	let typeWriterInstance: TypeWriter | null = null;
-	let particleInstance: ParticleSystem | null = null;
-	let isInitialized = false;
+	// 防止重复初始化
+	let asciiLogoInstance: AsciiLogoSystem | null = null;
 
-	// 初始化
 	function initHeroBanner() {
 		const heroBanner = document.getElementById('hero-banner');
-		// 如果 HeroBanner 被隐藏，不执行初始化
 		if (!heroBanner || heroBanner.classList.contains('hidden')) {
-			// 如果 HeroBanner 被隐藏，清理所有实例
 			cleanupInstances();
 			return;
 		}
 
-		// 清理旧实例
 		cleanupInstances();
 
-		// 初始化打字机
-		const typingElement = document.getElementById('typing-text');
-		if (typingElement) {
-			// 清空文本内容，重新开始
-			typingElement.textContent = '';
-			const texts = (window as any).heroTypingTexts || ['欢迎访问'];
-			typeWriterInstance = new TypeWriter('typing-text', texts);
+		const asciiCanvas = document.getElementById('ascii-canvas') as HTMLCanvasElement;
+		if (asciiCanvas) {
+			// 从 DOM data 属性读取 ASCII Art 数据（兼容 Swup 页面切换）
+			const raw: string = heroBanner.getAttribute('data-ascii-logo') || 'QusMarsh';
+			const lines = raw.split('\n').filter((l: string) => l.trimEnd().length > 0);
+			asciiLogoInstance = new AsciiLogoSystem('ascii-canvas', lines);
 		}
 
-		// 根据配置初始化粒子效果
-		if ((window as any).heroShowParticles) {
-			const particleContainer = document.getElementById('particles');
-			// 检查是否已有 canvas，避免重复创建
-			if (particleContainer && !particleContainer.querySelector('canvas')) {
-				particleInstance = new ParticleSystem('particles');
-			}
-		}
-
-		// 绑定滚动指示器点击（移除旧的监听器再添加新的）
 		const scrollIndicator = document.getElementById('scroll-indicator');
 		if (scrollIndicator) {
 			scrollIndicator.removeEventListener('click', scrollToContent);
 			scrollIndicator.addEventListener('click', scrollToContent);
 		}
-
-		isInitialized = true;
 	}
 
-	// 清理所有实例
 	function cleanupInstances() {
-		if (typeWriterInstance) {
-			typeWriterInstance.destroy();
-			typeWriterInstance = null;
-		}
-		if (particleInstance) {
-			particleInstance.destroy();
-			particleInstance = null;
+		if (asciiLogoInstance) {
+			asciiLogoInstance.destroy();
+			asciiLogoInstance = null;
 		}
 	}
 
-	// 页面加载完成后初始化
 	if (document.readyState === 'loading') {
 		document.addEventListener('DOMContentLoaded', initHeroBanner);
 	} else {
 		initHeroBanner();
 	}
 
-	// Swup 页面切换支持
 	if ((window as any).swup) {
 		(window as any).swup.hooks.on('page:view', initHeroBanner);
 	} else {
@@ -354,25 +366,16 @@ const showScrollIndicator = heroBannerConfig?.showScrollIndicator ?? true;
 		align-items: center;
 		justify-content: center;
 		overflow: hidden;
-		/* Bayer 8x8 dithering pattern CSS variables */
-		--dither-color-1: #181425;
-		--dither-color-2: #30346d;
 	}
 
-	/* 背景层 - 使用现有的二次元随机图背景 */
+	/* 背景层 */
 	.hero-bg {
 		position: absolute;
 		inset: 0;
 		z-index: 0;
 	}
 
-	.hero-particles {
-		position: absolute;
-		inset: 0;
-		z-index: 2;
-	}
-
-	/* 轻微遮罩 - 仅用于提高文字可读性，不影响背景展示 */
+	/* 遮罩层 - 全透明 */
 	.hero-overlay {
 		position: absolute;
 		inset: 0;
@@ -380,119 +383,21 @@ const showScrollIndicator = heroBannerConfig?.showScrollIndicator ?? true;
 		background: rgba(0, 0, 0, 0);
 	}
 
-	/* 主要内容 */
+	/* 主要内容 - 包裹 canvas */
 	.hero-content {
 		position: relative;
 		z-index: 10;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		text-align: center;
-		padding: 0 1.5rem;
-		animation: fadeInUp 1s ease-out;
-	}
-
-	@keyframes fadeInUp {
-		from {
-			opacity: 0;
-			transform: translateY(30px);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
-
-	/* Bayer 8x8 Dithered Gradient for text */
-	.hero-title {
-		font-size: clamp(3rem, 10vw, 5.5rem);
-		font-weight: 700;
-		margin: 0 0 0.75rem;
-		letter-spacing: 0.02em;
-		/* Bayer 8x8 dithered gradient background */
-		background: 
-			url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Crect x='0' y='0' width='1' height='1' fill='%23181425' fill-opacity='0.00'/%3E%3Crect x='1' y='0' width='1' height='1' fill='%23181425' fill-opacity='0.50'/%3E%3Crect x='2' y='0' width='1' height='1' fill='%23181425' fill-opacity='0.13'/%3E%3Crect x='3' y='0' width='1' height='1' fill='%23181425' fill-opacity='0.63'/%3E%3Crect x='4' y='0' width='1' height='1' fill='%23181425' fill-opacity='0.03'/%3E%3Crect x='5' y='0' width='1' height='1' fill='%23181425' fill-opacity='0.53'/%3E%3Crect x='6' y='0' width='1' height='1' fill='%23181425' fill-opacity='0.16'/%3E%3Crect x='7' y='0' width='1' height='1' fill='%23181425' fill-opacity='0.66'/%3E%3Crect x='0' y='1' width='1' height='1' fill='%23181425' fill-opacity='0.75'/%3E%3Crect x='1' y='1' width='1' height='1' fill='%23181425' fill-opacity='0.25'/%3E%3Crect x='2' y='1' width='1' height='1' fill='%23181425' fill-opacity='0.88'/%3E%3Crect x='3' y='1' width='1' height='1' fill='%23181425' fill-opacity='0.38'/%3E%3Crect x='4' y='1' width='1' height='1' fill='%23181425' fill-opacity='0.78'/%3E%3Crect x='5' y='1' width='1' height='1' fill='%23181425' fill-opacity='0.28'/%3E%3Crect x='6' y='1' width='1' height='1' fill='%23181425' fill-opacity='0.91'/%3E%3Crect x='7' y='1' width='1' height='1' fill='%23181425' fill-opacity='0.41'/%3E%3Crect x='0' y='2' width='1' height='1' fill='%23181425' fill-opacity='0.19'/%3E%3Crect x='1' y='2' width='1' height='1' fill='%23181425' fill-opacity='0.69'/%3E%3Crect x='2' y='2' width='1' height='1' fill='%23181425' fill-opacity='0.06'/%3E%3Crect x='3' y='2' width='1' height='1' fill='%23181425' fill-opacity='0.56'/%3E%3Crect x='4' y='2' width='1' height='1' fill='%23181425' fill-opacity='0.22'/%3E%3Crect x='5' y='2' width='1' height='1' fill='%23181425' fill-opacity='0.72'/%3E%3Crect x='6' y='2' width='1' height='1' fill='%23181425' fill-opacity='0.09'/%3E%3Crect x='7' y='2' width='1' height='1' fill='%23181425' fill-opacity='0.59'/%3E%3Crect x='0' y='3' width='1' height='1' fill='%23181425' fill-opacity='0.94'/%3E%3Crect x='1' y='3' width='1' height='1' fill='%23181425' fill-opacity='0.44'/%3E%3Crect x='2' y='3' width='1' height='1' fill='%23181425' fill-opacity='0.81'/%3E%3Crect x='3' y='3' width='1' height='1' fill='%23181425' fill-opacity='0.31'/%3E%3Crect x='4' y='3' width='1' height='1' fill='%23181425' fill-opacity='0.97'/%3E%3Crect x='5' y='3' width='1' height='1' fill='%23181425' fill-opacity='0.47'/%3E%3Crect x='6' y='3' width='1' height='1' fill='%23181425' fill-opacity='0.84'/%3E%3Crect x='7' y='3' width='1' height='1' fill='%23181425' fill-opacity='0.34'/%3E%3Crect x='0' y='4' width='1' height='1' fill='%23181425' fill-opacity='0.05'/%3E%3Crect x='1' y='4' width='1' height='1' fill='%23181425' fill-opacity='0.55'/%3E%3Crect x='2' y='4' width='1' height='1' fill='%23181425' fill-opacity='0.17'/%3E%3Crect x='3' y='4' width='1' height='1' fill='%23181425' fill-opacity='0.67'/%3E%3Crect x='4' y='4' width='1' height='1' fill='%23181425' fill-opacity='0.02'/%3E%3Crect x='5' y='4' width='1' height='1' fill='%23181425' fill-opacity='0.52'/%3E%3Crect x='6' y='4' width='1' height='1' fill='%23181425' fill-opacity='0.14'/%3E%3Crect x='7' y='4' width='1' height='1' fill='%23181425' fill-opacity='0.64'/%3E%3Crect x='0' y='5' width='1' height='1' fill='%23181425' fill-opacity='0.80'/%3E%3Crect x='1' y='5' width='1' height='1' fill='%23181425' fill-opacity='0.30'/%3E%3Crect x='2' y='5' width='1' height='1' fill='%23181425' fill-opacity='0.92'/%3E%3Crect x='3' y='5' width='1' height='1' fill='%23181425' fill-opacity='0.42'/%3E%3Crect x='4' y='5' width='1' height='1' fill='%23181425' fill-opacity='0.77'/%3E%3Crect x='5' y='5' width='1' height='1' fill='%23181425' fill-opacity='0.27'/%3E%3Crect x='6' y='5' width='1' height='1' fill='%23181425' fill-opacity='0.89'/%3E%3Crect x='7' y='5' width='1' height='1' fill='%23181425' fill-opacity='0.39'/%3E%3Crect x='0' y='6' width='1' height='1' fill='%23181425' fill-opacity='0.23'/%3E%3Crect x='1' y='6' width='1' height='1' fill='%23181425' fill-opacity='0.73'/%3E%3Crect x='2' y='6' width='1' height='1' fill='%23181425' fill-opacity='0.11'/%3E%3Crect x='3' y='6' width='1' height='1' fill='%23181425' fill-opacity='0.61'/%3E%3Crect x='4' y='6' width='1' height='1' fill='%23181425' fill-opacity='0.20'/%3E%3Crect x='5' y='6' width='1' height='1' fill='%23181425' fill-opacity='0.70'/%3E%3Crect x='6' y='6' width='1' height='1' fill='%23181425' fill-opacity='0.08'/%3E%3Crect x='7' y='6' width='1' height='1' fill='%23181425' fill-opacity='0.58'/%3E%3Crect x='0' y='7' width='1' height='1' fill='%23181425' fill-opacity='0.98'/%3E%3Crect x='1' y='7' width='1' height='1' fill='%23181425' fill-opacity='0.48'/%3E%3Crect x='2' y='7' width='1' height='1' fill='%23181425' fill-opacity='0.86'/%3E%3Crect x='3' y='7' width='1' height='1' fill='%23181425' fill-opacity='0.36'/%3E%3Crect x='4' y='7' width='1' height='1' fill='%23181425' fill-opacity='0.95'/%3E%3Crect x='5' y='7' width='1' height='1' fill='%23181425' fill-opacity='0.45'/%3E%3Crect x='6' y='7' width='1' height='1' fill='%23181425' fill-opacity='0.83'/%3E%3Crect x='7' y='7' width='1' height='1' fill='%23181425' fill-opacity='0.33'/%3E%3C/svg%3E"),
-			linear-gradient(135deg, var(--dither-color-1) 0%, var(--dither-color-2) 100%);
-		background-size: 8px 8px, 100% 100%;
-		-webkit-background-clip: text;
-		background-clip: text;
-		-webkit-text-fill-color: transparent;
-		text-shadow: none;
-		filter: drop-shadow(0 2px 20px rgba(24, 20, 37, 0.5));
-	}
-
-	/* 打字机效果副标题 */
-	.hero-subtitle {
-		font-size: clamp(1.25rem, 4vw, 1.75rem);
-		margin-bottom: 2.5rem;
-		min-height: 1.8em;
+		width: 100%;
+		height: 100%;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 	}
 
-	.typing-text {
-		/* Bayer 8x8 dithered gradient for subtitle */
-		background: 
-			url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Crect x='0' y='0' width='1' height='1' fill='%23181425' fill-opacity='0.00'/%3E%3Crect x='1' y='0' width='1' height='1' fill='%23181425' fill-opacity='0.50'/%3E%3Crect x='2' y='0' width='1' height='1' fill='%23181425' fill-opacity='0.13'/%3E%3Crect x='3' y='0' width='1' height='1' fill='%23181425' fill-opacity='0.63'/%3E%3Crect x='4' y='0' width='1' height='1' fill='%23181425' fill-opacity='0.03'/%3E%3Crect x='5' y='0' width='1' height='1' fill='%23181425' fill-opacity='0.53'/%3E%3Crect x='6' y='0' width='1' height='1' fill='%23181425' fill-opacity='0.16'/%3E%3Crect x='7' y='0' width='1' height='1' fill='%23181425' fill-opacity='0.66'/%3E%3Crect x='0' y='1' width='1' height='1' fill='%23181425' fill-opacity='0.75'/%3E%3Crect x='1' y='1' width='1' height='1' fill='%23181425' fill-opacity='0.25'/%3E%3Crect x='2' y='1' width='1' height='1' fill='%23181425' fill-opacity='0.88'/%3E%3Crect x='3' y='1' width='1' height='1' fill='%23181425' fill-opacity='0.38'/%3E%3Crect x='4' y='1' width='1' height='1' fill='%23181425' fill-opacity='0.78'/%3E%3Crect x='5' y='1' width='1' height='1' fill='%23181425' fill-opacity='0.28'/%3E%3Crect x='6' y='1' width='1' height='1' fill='%23181425' fill-opacity='0.91'/%3E%3Crect x='7' y='1' width='1' height='1' fill='%23181425' fill-opacity='0.41'/%3E%3Crect x='0' y='2' width='1' height='1' fill='%23181425' fill-opacity='0.19'/%3E%3Crect x='1' y='2' width='1' height='1' fill='%23181425' fill-opacity='0.69'/%3E%3Crect x='2' y='2' width='1' height='1' fill='%23181425' fill-opacity='0.06'/%3E%3Crect x='3' y='2' width='1' height='1' fill='%23181425' fill-opacity='0.56'/%3E%3Crect x='4' y='2' width='1' height='1' fill='%23181425' fill-opacity='0.22'/%3E%3Crect x='5' y='2' width='1' height='1' fill='%23181425' fill-opacity='0.72'/%3E%3Crect x='6' y='2' width='1' height='1' fill='%23181425' fill-opacity='0.09'/%3E%3Crect x='7' y='2' width='1' height='1' fill='%23181425' fill-opacity='0.59'/%3E%3Crect x='0' y='3' width='1' height='1' fill='%23181425' fill-opacity='0.94'/%3E%3Crect x='1' y='3' width='1' height='1' fill='%23181425' fill-opacity='0.44'/%3E%3Crect x='2' y='3' width='1' height='1' fill='%23181425' fill-opacity='0.81'/%3E%3Crect x='3' y='3' width='1' height='1' fill='%23181425' fill-opacity='0.31'/%3E%3Crect x='4' y='3' width='1' height='1' fill='%23181425' fill-opacity='0.97'/%3E%3Crect x='5' y='3' width='1' height='1' fill='%23181425' fill-opacity='0.47'/%3E%3Crect x='6' y='3' width='1' height='1' fill='%23181425' fill-opacity='0.84'/%3E%3Crect x='7' y='3' width='1' height='1' fill='%23181425' fill-opacity='0.34'/%3E%3Crect x='0' y='4' width='1' height='1' fill='%23181425' fill-opacity='0.05'/%3E%3Crect x='1' y='4' width='1' height='1' fill='%23181425' fill-opacity='0.55'/%3E%3Crect x='2' y='4' width='1' height='1' fill='%23181425' fill-opacity='0.17'/%3E%3Crect x='3' y='4' width='1' height='1' fill='%23181425' fill-opacity='0.67'/%3E%3Crect x='4' y='4' width='1' height='1' fill='%23181425' fill-opacity='0.02'/%3E%3Crect x='5' y='4' width='1' height='1' fill='%23181425' fill-opacity='0.52'/%3E%3Crect x='6' y='4' width='1' height='1' fill='%23181425' fill-opacity='0.14'/%3E%3Crect x='7' y='4' width='1' height='1' fill='%23181425' fill-opacity='0.64'/%3E%3Crect x='0' y='5' width='1' height='1' fill='%23181425' fill-opacity='0.80'/%3E%3Crect x='1' y='5' width='1' height='1' fill='%23181425' fill-opacity='0.30'/%3E%3Crect x='2' y='5' width='1' height='1' fill='%23181425' fill-opacity='0.92'/%3E%3Crect x='3' y='5' width='1' height='1' fill='%23181425' fill-opacity='0.42'/%3E%3Crect x='4' y='5' width='1' height='1' fill='%23181425' fill-opacity='0.77'/%3E%3Crect x='5' y='5' width='1' height='1' fill='%23181425' fill-opacity='0.27'/%3E%3Crect x='6' y='5' width='1' height='1' fill='%23181425' fill-opacity='0.89'/%3E%3Crect x='7' y='5' width='1' height='1' fill='%23181425' fill-opacity='0.39'/%3E%3Crect x='0' y='6' width='1' height='1' fill='%23181425' fill-opacity='0.23'/%3E%3Crect x='1' y='6' width='1' height='1' fill='%23181425' fill-opacity='0.73'/%3E%3Crect x='2' y='6' width='1' height='1' fill='%23181425' fill-opacity='0.11'/%3E%3Crect x='3' y='6' width='1' height='1' fill='%23181425' fill-opacity='0.61'/%3E%3Crect x='4' y='6' width='1' height='1' fill='%23181425' fill-opacity='0.20'/%3E%3Crect x='5' y='6' width='1' height='1' fill='%23181425' fill-opacity='0.70'/%3E%3Crect x='6' y='6' width='1' height='1' fill='%23181425' fill-opacity='0.08'/%3E%3Crect x='7' y='6' width='1' height='1' fill='%23181425' fill-opacity='0.58'/%3E%3Crect x='0' y='7' width='1' height='1' fill='%23181425' fill-opacity='0.98'/%3E%3Crect x='1' y='7' width='1' height='1' fill='%23181425' fill-opacity='0.48'/%3E%3Crect x='2' y='7' width='1' height='1' fill='%23181425' fill-opacity='0.86'/%3E%3Crect x='3' y='7' width='1' height='1' fill='%23181425' fill-opacity='0.36'/%3E%3Crect x='4' y='7' width='1' height='1' fill='%23181425' fill-opacity='0.95'/%3E%3Crect x='5' y='7' width='1' height='1' fill='%23181425' fill-opacity='0.45'/%3E%3Crect x='6' y='7' width='1' height='1' fill='%23181425' fill-opacity='0.83'/%3E%3Crect x='7' y='7' width='1' height='1' fill='%23181425' fill-opacity='0.33'/%3E%3C/svg%3E"),
-			linear-gradient(135deg, var(--dither-color-1) 0%, var(--dither-color-2) 100%);
-		background-size: 8px 8px, 100% 100%;
-		-webkit-background-clip: text;
-		background-clip: text;
-		-webkit-text-fill-color: transparent;
-		filter: drop-shadow(0 1px 10px rgba(24, 20, 37, 0.4));
-	}
-
-	.typing-cursor {
-		/* Dithered gradient for cursor too */
-		background: linear-gradient(135deg, var(--dither-color-1) 0%, var(--dither-color-2) 100%);
-		-webkit-background-clip: text;
-		background-clip: text;
-		-webkit-text-fill-color: transparent;
-		font-weight: 100;
-		animation: blink 1s step-end infinite;
-		margin-left: 2px;
-	}
-
-	@keyframes blink {
-		0%, 100% { opacity: 1; }
-		50% { opacity: 0; }
-	}
-
-	/* 社交链接 */
-	.hero-social {
-		display: flex;
-		gap: 1rem;
-		margin-bottom: 2.5rem;
-	}
-
-	.hero-social-link {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 52px;
-		height: 52px;
-		border-radius: 50%;
-		/* Bayer 8x8 dithered gradient background for social links */
-		background: 
-			url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Crect x='0' y='0' width='1' height='1' fill='%23181425' fill-opacity='0.00'/%3E%3Crect x='1' y='0' width='1' height='1' fill='%23181425' fill-opacity='0.50'/%3E%3Crect x='2' y='0' width='1' height='1' fill='%23181425' fill-opacity='0.13'/%3E%3Crect x='3' y='0' width='1' height='1' fill='%23181425' fill-opacity='0.63'/%3E%3Crect x='4' y='0' width='1' height='1' fill='%23181425' fill-opacity='0.03'/%3E%3Crect x='5' y='0' width='1' height='1' fill='%23181425' fill-opacity='0.53'/%3E%3Crect x='6' y='0' width='1' height='1' fill='%23181425' fill-opacity='0.16'/%3E%3Crect x='7' y='0' width='1' height='1' fill='%23181425' fill-opacity='0.66'/%3E%3Crect x='0' y='1' width='1' height='1' fill='%23181425' fill-opacity='0.75'/%3E%3Crect x='1' y='1' width='1' height='1' fill='%23181425' fill-opacity='0.25'/%3E%3Crect x='2' y='1' width='1' height='1' fill='%23181425' fill-opacity='0.88'/%3E%3Crect x='3' y='1' width='1' height='1' fill='%23181425' fill-opacity='0.38'/%3E%3Crect x='4' y='1' width='1' height='1' fill='%23181425' fill-opacity='0.78'/%3E%3Crect x='5' y='1' width='1' height='1' fill='%23181425' fill-opacity='0.28'/%3E%3Crect x='6' y='1' width='1' height='1' fill='%23181425' fill-opacity='0.91'/%3E%3Crect x='7' y='1' width='1' height='1' fill='%23181425' fill-opacity='0.41'/%3E%3Crect x='0' y='2' width='1' height='1' fill='%23181425' fill-opacity='0.19'/%3E%3Crect x='1' y='2' width='1' height='1' fill='%23181425' fill-opacity='0.69'/%3E%3Crect x='2' y='2' width='1' height='1' fill='%23181425' fill-opacity='0.06'/%3E%3Crect x='3' y='2' width='1' height='1' fill='%23181425' fill-opacity='0.56'/%3E%3Crect x='4' y='2' width='1' height='1' fill='%23181425' fill-opacity='0.22'/%3E%3Crect x='5' y='2' width='1' height='1' fill='%23181425' fill-opacity='0.72'/%3E%3Crect x='6' y='2' width='1' height='1' fill='%23181425' fill-opacity='0.09'/%3E%3Crect x='7' y='2' width='1' height='1' fill='%23181425' fill-opacity='0.59'/%3E%3Crect x='0' y='3' width='1' height='1' fill='%23181425' fill-opacity='0.94'/%3E%3Crect x='1' y='3' width='1' height='1' fill='%23181425' fill-opacity='0.44'/%3E%3Crect x='2' y='3' width='1' height='1' fill='%23181425' fill-opacity='0.81'/%3E%3Crect x='3' y='3' width='1' height='1' fill='%23181425' fill-opacity='0.31'/%3E%3Crect x='4' y='3' width='1' height='1' fill='%23181425' fill-opacity='0.97'/%3E%3Crect x='5' y='3' width='1' height='1' fill='%23181425' fill-opacity='0.47'/%3E%3Crect x='6' y='3' width='1' height='1' fill='%23181425' fill-opacity='0.84'/%3E%3Crect x='7' y='3' width='1' height='1' fill='%23181425' fill-opacity='0.34'/%3E%3Crect x='0' y='4' width='1' height='1' fill='%23181425' fill-opacity='0.05'/%3E%3Crect x='1' y='4' width='1' height='1' fill='%23181425' fill-opacity='0.55'/%3E%3Crect x='2' y='4' width='1' height='1' fill='%23181425' fill-opacity='0.17'/%3E%3Crect x='3' y='4' width='1' height='1' fill='%23181425' fill-opacity='0.67'/%3E%3Crect x='4' y='4' width='1' height='1' fill='%23181425' fill-opacity='0.02'/%3E%3Crect x='5' y='4' width='1' height='1' fill='%23181425' fill-opacity='0.52'/%3E%3Crect x='6' y='4' width='1' height='1' fill='%23181425' fill-opacity='0.14'/%3E%3Crect x='7' y='4' width='1' height='1' fill='%23181425' fill-opacity='0.64'/%3E%3Crect x='0' y='5' width='1' height='1' fill='%23181425' fill-opacity='0.80'/%3E%3Crect x='1' y='5' width='1' height='1' fill='%23181425' fill-opacity='0.30'/%3E%3Crect x='2' y='5' width='1' height='1' fill='%23181425' fill-opacity='0.92'/%3E%3Crect x='3' y='5' width='1' height='1' fill='%23181425' fill-opacity='0.42'/%3E%3Crect x='4' y='5' width='1' height='1' fill='%23181425' fill-opacity='0.77'/%3E%3Crect x='5' y='5' width='1' height='1' fill='%23181425' fill-opacity='0.27'/%3E%3Crect x='6' y='5' width='1' height='1' fill='%23181425' fill-opacity='0.89'/%3E%3Crect x='7' y='5' width='1' height='1' fill='%23181425' fill-opacity='0.39'/%3E%3Crect x='0' y='6' width='1' height='1' fill='%23181425' fill-opacity='0.23'/%3E%3Crect x='1' y='6' width='1' height='1' fill='%23181425' fill-opacity='0.73'/%3E%3Crect x='2' y='6' width='1' height='1' fill='%23181425' fill-opacity='0.11'/%3E%3Crect x='3' y='6' width='1' height='1' fill='%23181425' fill-opacity='0.61'/%3E%3Crect x='4' y='6' width='1' height='1' fill='%23181425' fill-opacity='0.20'/%3E%3Crect x='5' y='6' width='1' height='1' fill='%23181425' fill-opacity='0.70'/%3E%3Crect x='6' y='6' width='1' height='1' fill='%23181425' fill-opacity='0.08'/%3E%3Crect x='7' y='6' width='1' height='1' fill='%23181425' fill-opacity='0.58'/%3E%3Crect x='0' y='7' width='1' height='1' fill='%23181425' fill-opacity='0.98'/%3E%3Crect x='1' y='7' width='1' height='1' fill='%23181425' fill-opacity='0.48'/%3E%3Crect x='2' y='7' width='1' height='1' fill='%23181425' fill-opacity='0.86'/%3E%3Crect x='3' y='7' width='1' height='1' fill='%23181425' fill-opacity='0.36'/%3E%3Crect x='4' y='7' width='1' height='1' fill='%23181425' fill-opacity='0.95'/%3E%3Crect x='5' y='7' width='1' height='1' fill='%23181425' fill-opacity='0.45'/%3E%3Crect x='6' y='7' width='1' height='1' fill='%23181425' fill-opacity='0.83'/%3E%3Crect x='7' y='7' width='1' height='1' fill='%23181425' fill-opacity='0.33'/%3E%3C/svg%3E"),
-			linear-gradient(135deg, var(--dither-color-2) 0%, var(--dither-color-1) 100%);
-		background-size: 8px 8px, 100% 100%;
-		backdrop-filter: blur(10px);
-		color: rgba(255, 255, 255, 0.95);
-		transition: all 0.3s ease;
-		border: 1px solid rgba(48, 52, 109, 0.4);
-		box-shadow: 0 4px 15px rgba(24, 20, 37, 0.3);
-	}
-
-	.hero-social-link:hover {
-		background: 
-			url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Crect x='0' y='0' width='1' height='1' fill='%2330346d' fill-opacity='0.00'/%3E%3Crect x='1' y='0' width='1' height='1' fill='%2330346d' fill-opacity='0.50'/%3E%3Crect x='2' y='0' width='1' height='1' fill='%2330346d' fill-opacity='0.13'/%3E%3Crect x='3' y='0' width='1' height='1' fill='%2330346d' fill-opacity='0.63'/%3E%3Crect x='4' y='0' width='1' height='1' fill='%2330346d' fill-opacity='0.03'/%3E%3Crect x='5' y='0' width='1' height='1' fill='%2330346d' fill-opacity='0.53'/%3E%3Crect x='6' y='0' width='1' height='1' fill='%2330346d' fill-opacity='0.16'/%3E%3Crect x='7' y='0' width='1' height='1' fill='%2330346d' fill-opacity='0.66'/%3E%3Crect x='0' y='1' width='1' height='1' fill='%2330346d' fill-opacity='0.75'/%3E%3Crect x='1' y='1' width='1' height='1' fill='%2330346d' fill-opacity='0.25'/%3E%3Crect x='2' y='1' width='1' height='1' fill='%2330346d' fill-opacity='0.88'/%3E%3Crect x='3' y='1' width='1' height='1' fill='%2330346d' fill-opacity='0.38'/%3E%3Crect x='4' y='1' width='1' height='1' fill='%2330346d' fill-opacity='0.78'/%3E%3Crect x='5' y='1' width='1' height='1' fill='%2330346d' fill-opacity='0.28'/%3E%3Crect x='6' y='1' width='1' height='1' fill='%2330346d' fill-opacity='0.91'/%3E%3Crect x='7' y='1' width='1' height='1' fill='%2330346d' fill-opacity='0.41'/%3E%3Crect x='0' y='2' width='1' height='1' fill='%2330346d' fill-opacity='0.19'/%3E%3Crect x='1' y='2' width='1' height='1' fill='%2330346d' fill-opacity='0.69'/%3E%3Crect x='2' y='2' width='1' height='1' fill='%2330346d' fill-opacity='0.06'/%3E%3Crect x='3' y='2' width='1' height='1' fill='%2330346d' fill-opacity='0.56'/%3E%3Crect x='4' y='2' width='1' height='1' fill='%2330346d' fill-opacity='0.22'/%3E%3Crect x='5' y='2' width='1' height='1' fill='%2330346d' fill-opacity='0.72'/%3E%3Crect x='6' y='2' width='1' height='1' fill='%2330346d' fill-opacity='0.09'/%3E%3Crect x='7' y='2' width='1' height='1' fill='%2330346d' fill-opacity='0.59'/%3E%3Crect x='0' y='3' width='1' height='1' fill='%2330346d' fill-opacity='0.94'/%3E%3Crect x='1' y='3' width='1' height='1' fill='%2330346d' fill-opacity='0.44'/%3E%3Crect x='2' y='3' width='1' height='1' fill='%2330346d' fill-opacity='0.81'/%3E%3Crect x='3' y='3' width='1' height='1' fill='%2330346d' fill-opacity='0.31'/%3E%3Crect x='4' y='3' width='1' height='1' fill='%2330346d' fill-opacity='0.97'/%3E%3Crect x='5' y='3' width='1' height='1' fill='%2330346d' fill-opacity='0.47'/%3E%3Crect x='6' y='3' width='1' height='1' fill='%2330346d' fill-opacity='0.84'/%3E%3Crect x='7' y='3' width='1' height='1' fill='%2330346d' fill-opacity='0.34'/%3E%3Crect x='0' y='4' width='1' height='1' fill='%2330346d' fill-opacity='0.05'/%3E%3Crect x='1' y='4' width='1' height='1' fill='%2330346d' fill-opacity='0.55'/%3E%3Crect x='2' y='4' width='1' height='1' fill='%2330346d' fill-opacity='0.17'/%3E%3Crect x='3' y='4' width='1' height='1' fill='%2330346d' fill-opacity='0.67'/%3E%3Crect x='4' y='4' width='1' height='1' fill='%2330346d' fill-opacity='0.02'/%3E%3Crect x='5' y='4' width='1' height='1' fill='%2330346d' fill-opacity='0.52'/%3E%3Crect x='6' y='4' width='1' height='1' fill='%2330346d' fill-opacity='0.14'/%3E%3Crect x='7' y='4' width='1' height='1' fill='%2330346d' fill-opacity='0.64'/%3E%3Crect x='0' y='5' width='1' height='1' fill='%2330346d' fill-opacity='0.80'/%3E%3Crect x='1' y='5' width='1' height='1' fill='%2330346d' fill-opacity='0.30'/%3E%3Crect x='2' y='5' width='1' height='1' fill='%2330346d' fill-opacity='0.92'/%3E%3Crect x='3' y='5' width='1' height='1' fill='%2330346d' fill-opacity='0.42'/%3E%3Crect x='4' y='5' width='1' height='1' fill='%2330346d' fill-opacity='0.77'/%3E%3Crect x='5' y='5' width='1' height='1' fill='%2330346d' fill-opacity='0.27'/%3E%3Crect x='6' y='5' width='1' height='1' fill='%2330346d' fill-opacity='0.89'/%3E%3Crect x='7' y='5' width='1' height='1' fill='%2330346d' fill-opacity='0.39'/%3E%3Crect x='0' y='6' width='1' height='1' fill='%2330346d' fill-opacity='0.23'/%3E%3Crect x='1' y='6' width='1' height='1' fill='%2330346d' fill-opacity='0.73'/%3E%3Crect x='2' y='6' width='1' height='1' fill='%2330346d' fill-opacity='0.11'/%3E%3Crect x='3' y='6' width='1' height='1' fill='%2330346d' fill-opacity='0.61'/%3E%3Crect x='4' y='6' width='1' height='1' fill='%2330346d' fill-opacity='0.20'/%3E%3Crect x='5' y='6' width='1' height='1' fill='%2330346d' fill-opacity='0.70'/%3E%3Crect x='6' y='6' width='1' height='1' fill='%2330346d' fill-opacity='0.08'/%3E%3Crect x='7' y='6' width='1' height='1' fill='%2330346d' fill-opacity='0.58'/%3E%3Crect x='0' y='7' width='1' height='1' fill='%2330346d' fill-opacity='0.98'/%3E%3Crect x='1' y='7' width='1' height='1' fill='%2330346d' fill-opacity='0.48'/%3E%3Crect x='2' y='7' width='1' height='1' fill='%2330346d' fill-opacity='0.86'/%3E%3Crect x='3' y='7' width='1' height='1' fill='%2330346d' fill-opacity='0.36'/%3E%3Crect x='4' y='7' width='1' height='1' fill='%2330346d' fill-opacity='0.95'/%3E%3Crect x='5' y='7' width='1' height='1' fill='%2330346d' fill-opacity='0.45'/%3E%3Crect x='6' y='7' width='1' height='1' fill='%2330346d' fill-opacity='0.83'/%3E%3Crect x='7' y='7' width='1' height='1' fill='%2330346d' fill-opacity='0.33'/%3E%3C/svg%3E"),
-			linear-gradient(135deg, var(--dither-color-1) 0%, var(--dither-color-2) 100%);
-		background-size: 8px 8px, 100% 100%;
-		transform: translateY(-3px);
-		box-shadow: 0 8px 25px rgba(24, 20, 37, 0.5);
-		border-color: rgba(48, 52, 109, 0.6);
+	.ascii-canvas {
+		width: 100%;
+		height: 100%;
+		cursor: default;
 	}
 
 	/* 向下滚动指示器 */
@@ -563,18 +468,7 @@ const showScrollIndicator = heroBannerConfig?.showScrollIndicator ?? true;
 		50% { transform: translateY(5px); }
 	}
 
-	/* 响应式 */
 	@media (max-width: 768px) {
-		.hero-avatar {
-			width: 110px;
-			height: 110px;
-		}
-
-		.hero-social-link {
-			width: 46px;
-			height: 46px;
-		}
-
 		.hero-scroll-indicator {
 			bottom: 1.5rem;
 		}

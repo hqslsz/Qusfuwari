@@ -113,8 +113,7 @@ export interface BackgroundConfig {
 
 export interface HeroBannerConfig {
 	enable: boolean;
-	typingTexts?: string[]; // 打字机效果显示的文字数组
-	showParticles?: boolean; // 是否显示粒子效果
+	asciiLogo?: string; // 自定义 ASCII Art 图案（推荐编辑 src/ascii-logo.txt）
 	showScrollIndicator?: boolean; // 是否显示向下滚动指示器
 }
 

@@ -39,7 +39,7 @@ export default defineConfig({
 			animationClass: "transition-swup-", // see https://swup.js.org/options/#animationselector
 			// the default value `transition-` cause transition delay
 			// when the Tailwind class `transition-all` is used
-			containers: ["main", "#toc"],
+			containers: ["main", "#toc", "#hero-banner"],
 			smoothScrolling: false, // 禁用默认滚动，手动控制滚动到 HeroBanner 下方
 			cache: true,
 			preload: true,

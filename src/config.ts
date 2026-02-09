@@ -26,16 +26,10 @@ export const siteConfig: SiteConfig = {
 		},
 	},
 
-	// Hero Banner 配置（类似 WordPress Argon 主题的全屏横幅）
+	// Hero Banner 配置（ASCII Logo 交互式全屏横幅）
 	heroBanner: {
 		enable: true, // 是否在首页显示 Hero Banner
-		typingTexts: [
-			// 打字机效果显示的文字，按顺序循环
-			"天下大统",
-			"欢迎来到 QusMarsh",
-			"探索，记录，分享",
-		],
-		showParticles: true, // 是否显示粒子动画效果
+		// ASCII Art 图案从 src/ascii-logo.txt 读取，无需在此配置
 		showScrollIndicator: true, // 是否显示向下滚动指示器
 	},
 
