@@ -75,11 +75,12 @@ const showTOC = siteConfig.toc.enable && headings.length > 0;
 		</div>
 	</div>
 
-	<!-- TOC - 目录（仅当有标题时显示） -->
+	<!-- TOC - 目录（仅当有标题时显示），使用单层 fixed 定位 -->
 	{showTOC && (
-		<div id="toc-wrapper" class:list={["hidden xl:block transition pointer-events-auto",
-			{"toc-hidden": showHeroBanner}]}>
-			<div id="toc-inner-wrapper" class="fixed top-14 right-[1rem] w-[var(--toc-width)] h-[calc(100vh_-_10rem)] overflow-y-scroll overflow-x-hidden hide-scrollbar will-change-transform">
+		<div id="toc-wrapper" class:list={["hidden xl:block fixed top-14 right-[1rem] z-40 pointer-events-auto",
+			{"toc-hide": showHeroBanner}]}
+		>
+			<div id="toc-inner-wrapper" class="w-[var(--toc-width)] h-[calc(100vh_-_10rem)] overflow-y-scroll overflow-x-hidden hide-scrollbar">
 				<div id="toc" class="w-full h-full transition-swup-fade">
 					<div class="h-8 w-full"></div>
 					<TOC headings={headings} />
@@ -122,29 +123,9 @@ const showTOC = siteConfig.toc.enable && headings.length > 0;
 		backdrop-filter: blur(10px);
 	}
 
-	/* TOC 目录导航样式 */
+	/* TOC 目录导航样式 - 使用单层 fixed，不需要 contain */
 	#toc-wrapper {
-		position: fixed;
-		top: 0;
-		right: 0;
-		z-index: 40;
-		opacity: 1;
-		transition: opacity 0.4s ease, transform 0.4s ease;
-		/* 使用 contain 隔离渲染，防止背景动画影响 TOC 位置 */
-		contain: layout style;
-	}
-
-	/* 当 HeroBanner 可见时隐藏 TOC */
-	#toc-wrapper.toc-hidden {
-		opacity: 0;
-		pointer-events: none !important;
-	}
-	
-	/* 确保 TOC 内部容器的位置稳定 */
-	#toc-inner-wrapper {
-		/* 强制创建独立合成层，避免重绘 */
-		transform: translateZ(0);
-		backface-visibility: hidden;
+		transition: opacity 0.4s ease;
 	}
 </style>
 
@@ -174,14 +155,14 @@ const showTOC = siteConfig.toc.enable && headings.length > 0;
 			}
 		}
 		
-		// 控制 TOC 目录显示/隐藏
+		// 控制 TOC 目录显示/隐藏（使用与 main.css 一致的 toc-hide 类名）
 		if (tocWrapper) {
 			if (!isHeroBannerVisible || hasScrolledPastBanner) {
 				// 如果没有 HeroBanner 或者滚动过了，显示 TOC
-				tocWrapper.classList.remove('toc-hidden');
+				tocWrapper.classList.remove('toc-hide');
 			} else {
 				// HeroBanner 可见且没有滚动过，隐藏 TOC
-				tocWrapper.classList.add('toc-hidden');
+				tocWrapper.classList.add('toc-hide');
 			}
 		}
 		
