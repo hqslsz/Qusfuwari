@@ -35,7 +35,7 @@ export const siteConfig: SiteConfig = {
 
 	background: {
 		enable: true, // 是否启用背景图
-		src: "https://morbol.qus.moe/bg/startrain.gif", // 随机背景API（已添加缓存机制防止闪烁）
+		src: "imgs/startrain.gif", // 随机背景API（已添加缓存机制防止闪烁）
 		position: "center", // 背景位置: 'top', 'center', 'bottom'
 		size: "cover", // 背景大小: 'cover', 'contain', 'auto'
 		repeat: "no-repeat", // 背景重复: 'no-repeat', 'repeat'
@@ -53,7 +53,7 @@ export const siteConfig: SiteConfig = {
 	},
 
 	toc: {
-		enable: true, // 在文章右侧显示目录
+		enable: false, // 在文章右侧显示目录
 		depth: 3, // 目录显示的最大标题层级，范围 1 到 3
 	},
 	favicon: [
