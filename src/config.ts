@@ -35,7 +35,7 @@ export const siteConfig: SiteConfig = {
 
 	background: {
 		enable: true, // 是否启用背景图
-		src: "assets/imgs/startrain.gif",
+		src: "/imgs/startrain.gif",
 		position: "center", // 背景位置: 'top', 'center', 'bottom'
 		size: "cover", // 背景大小: 'cover', 'contain', 'auto'
 		repeat: "no-repeat", // 背景重复: 'no-repeat', 'repeat'
@@ -75,8 +75,8 @@ export const navBarConfig: NavBarConfig = {
 		LinkPreset.Friends,
 		LinkPreset.Moments,
 		{
-			name: "GitHub",
-			url: "https://github.com/saicaca/fuwari", // 内部链接不需要包含基础路径，会自动添加
+			name: "其他领土",
+			url: "https://teleport.qus.moe", // 内部链接不需要包含基础路径，会自动添加
 			external: true, // 显示外链图标并在新标签页打开
 		},
 	],
@@ -87,7 +87,7 @@ export const navBarConfig: NavBarConfig = {
 export const profileConfig: ProfileConfig = {
 	avatar: "assets/images/kdl.jpg", // 相对于 /src 目录的路径。如果以 '/' 开头则相对于 /public 目录（已本地化优化）
 	name: "Quasi2317",
-	bio: "天下大统",
+	bio: "今天的事也必须在今天全力以赴",
 	links: [
 		{
 			name: "bilibili",

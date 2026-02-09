@@ -6,7 +6,6 @@ tags:
   - pixelart
   - 玩
 category: 玩
-image: https://xn--wnu.icu/wqt-of-ee/quasi2317.png
 draft: false
 ---
 = 摘自『ISCC2024 / 精装四合一 』=
