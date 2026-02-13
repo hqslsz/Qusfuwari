@@ -44,7 +44,7 @@ const showTOC = siteConfig.toc.enable && headings.length > 0;
 	<HeroBanner class={showHeroBanner ? "" : "hidden"} />
 
 	<!-- Navbar - 固定在顶部，HeroBanner 显示时隐藏 -->
-	<div id="top-row" class="z-50 pointer-events-none fixed top-0 left-0 right-0 transition-all duration-500 max-w-[var(--page-width)] px-0 md:px-4 mx-auto navbar-hidden">
+	<div id="top-row" class="z-50 pointer-events-none fixed top-0 left-0 right-0 max-w-[var(--page-width)] px-0 md:px-4 mx-auto navbar-hidden">
 		<div id="navbar-wrapper" class="pointer-events-auto transition-all">
 			<Navbar />
 		</div>
@@ -130,6 +130,9 @@ const showTOC = siteConfig.toc.enable && headings.length > 0;
 </style>
 
 <script>
+	// Swup 页面切换期间的标志，防止滚动事件导致导航栏闪烁
+	let isSwupTransitioning = false;
+
 	// 监听滚动事件，控制导航栏、TOC 显示和 body 的 scrolled 类
 	function handleScroll() {
 		const heroBanner = document.getElementById('hero-banner');
@@ -144,25 +147,24 @@ const showTOC = siteConfig.toc.enable && headings.length > 0;
 		const scrollThreshold = heroHeight * 0.7;
 		const hasScrolledPastBanner = window.scrollY > scrollThreshold;
 		
-		// 控制导航栏显示/隐藏
-		if (topRow) {
-			if (!isHeroBannerVisible || hasScrolledPastBanner) {
-				// 如果没有 HeroBanner 或者滚动过了，显示导航栏
-				topRow.classList.remove('navbar-hidden');
-			} else {
-				// HeroBanner 可见且没有滚动过，隐藏导航栏
-				topRow.classList.add('navbar-hidden');
-			}
-		}
-		
-		// 控制 TOC 目录显示/隐藏（使用与 main.css 一致的 toc-hide 类名）
-		if (tocWrapper) {
-			if (!isHeroBannerVisible || hasScrolledPastBanner) {
-				// 如果没有 HeroBanner 或者滚动过了，显示 TOC
-				tocWrapper.classList.remove('toc-hide');
-			} else {
-				// HeroBanner 可见且没有滚动过，隐藏 TOC
-				tocWrapper.classList.add('toc-hide');
+		// Swup 切换期间跳过导航栏和 TOC 的显示/隐藏切换，防止闪烁
+		if (!isSwupTransitioning) {
+			// 控制导航栏显示/隐藏
+			if (topRow) {
+				if (!isHeroBannerVisible || hasScrolledPastBanner) {
+					topRow.classList.remove('navbar-hidden');
+				} else {
+					topRow.classList.add('navbar-hidden');
+				}
+			}      
+			
+			// 控制 TOC 目录显示/隐藏
+			if (tocWrapper) {
+				if (!isHeroBannerVisible || hasScrolledPastBanner) {
+					tocWrapper.classList.remove('toc-hide');
+				} else {
+					tocWrapper.classList.add('toc-hide');
+				}
 			}
 		}
 		
@@ -177,12 +179,36 @@ const showTOC = siteConfig.toc.enable && headings.length > 0;
 	window.addEventListener('scroll', handleScroll, { passive: true });
 	handleScroll(); // 初始检查
 
-	// Swup 页面切换后重新检查
-	if ((window as any).swup) {
-		(window as any).swup.hooks.on('page:view', handleScroll);
-	} else {
-		document.addEventListener('swup:enable', () => {
-			(window as any).swup.hooks.on('page:view', handleScroll);
+	// Swup 页面切换钩子：切换期间冻结导航栏状态，切换完成后再更新
+	function setupSwupHooks() {
+		const swup = (window as any).swup;
+
+		swup.hooks.on('visit:start', () => {
+			isSwupTransitioning = true;
+			// 切换期间临时禁用导航栏的 CSS 过渡，防止闪烁
+			const topRow = document.getElementById('top-row');
+			if (topRow) {
+				topRow.style.transition = 'none';
+			}
 		});
+
+		swup.hooks.on('visit:end', () => {
+			isSwupTransitioning = false;
+			const topRow = document.getElementById('top-row');
+			if (topRow) {
+				// 先不带过渡地更新到正确状态
+				handleScroll();
+				// 然后恢复 CSS 过渡
+				requestAnimationFrame(() => {
+					topRow.style.transition = '';
+				});
+			}
+		});
+	}
+
+	if ((window as any).swup) {
+		setupSwupHooks();
+	} else {
+		document.addEventListener('swup:enable', setupSwupHooks);
 	}
 </script>

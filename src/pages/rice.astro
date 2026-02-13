@@ -15,10 +15,10 @@ if (!ricePost) {
 const { Content } = await render(ricePost);
 ---
 <HomeLayout title={i18n(I18nKey.rice)} description={i18n(I18nKey.rice)}>
-    <!-- 整体容器，避免 gap 间距 -->
-    <div class="rice-container">
+    <!-- 整体容器：单个 card-base 包裹，避免交界处出现缝隙 -->
+    <div class="rice-container card-base">
         <!-- 超酷背景效果容器 -->
-        <div class="hero-background-section card-base">
+        <div class="hero-background-section">
             <div class="hero-wrapper">
                 <div class="japanese" aria-hidden="true">
                     <!-- "米"字符号 -->
@@ -30,13 +30,11 @@ const { Content } = await render(ricePost);
             </div>
         </div>
 
-        <!-- 内容卡片 -->
-        <div class="flex w-full overflow-hidden relative min-h-32 content-card">
-            <div class="card-base z-10 px-9 py-6 relative w-full rounded-t-none">
-                <Markdown class="mt-2">
-                    <Content />
-                </Markdown>
-            </div>
+        <!-- 内容区域 -->
+        <div class="rice-content-area">
+            <Markdown class="mt-2">
+                <Content />
+            </Markdown>
         </div>
     </div>
 </HomeLayout>
@@ -49,7 +47,7 @@ const { Content } = await render(ricePost);
         width: 100%;
     }
 
-    /* 背景容器 */
+    /* 背景容器（不再需要独立圆角和背景，由外层 card-base 统一处理） */
     .hero-background-section {
         position: relative;
         width: 100%;
@@ -59,8 +57,6 @@ const { Content } = await render(ricePost);
         align-items: center;
         justify-content: center;
         overflow: hidden;
-        margin-bottom: 0;
-        border-radius: var(--radius-large) var(--radius-large) 0 0;
     }
 
     /* Hero包装器 */
@@ -147,9 +143,9 @@ const { Content } = await render(ricePost);
         font-weight: 500;
     }
 
-    /* 内容卡片间距 */
-    .content-card {
-        margin-top: 0;
+    /* 内容区域 */
+    .rice-content-area {
+        padding: 1.5rem 2.25rem;
     }
 
     /* 深色主题适配 */

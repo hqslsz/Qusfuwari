@@ -83,6 +83,32 @@ function loadButtonScript() {
             }
         };
     }
+
+    // 防止点击当前页面的导航链接时跳转到顶部
+    const navLinks = document.querySelectorAll('#navbar a[href]:not([target="_blank"]), #nav-menu-panel a[href]:not([target="_blank"])');
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            const href = link.getAttribute('href');
+            if (!href) return;
+            const currentPath = window.location.pathname.replace(/\/+$/, '').toLowerCase();
+            const linkPath = new URL(href, window.location.origin).pathname.replace(/\/+$/, '').toLowerCase();
+            if (currentPath === linkPath) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        });
+    });
+
+    // 导航栏入场动画完成后，移除 onload-animation 类并锁定 opacity
+    // 防止 Swup 页面切换时 CSS 重算导致动画重播闪烁
+    const navbar = document.getElementById('navbar');
+    if (navbar && navbar.classList.contains('onload-animation')) {
+        navbar.addEventListener('animationend', () => {
+            navbar.style.opacity = '1';
+            navbar.style.transform = 'translateY(0)';
+            navbar.classList.remove('onload-animation');
+        }, { once: true });
+    }
 }
 
 loadButtonScript();
