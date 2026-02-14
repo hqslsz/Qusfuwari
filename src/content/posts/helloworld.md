@@ -86,7 +86,7 @@ draft: false
 
 适合喜欢华丽优雅的博客主题的人，整体性能也非常不错。
 
->- 主题仓库：[Frosti](https://github.com/matsuzaka-yuki/Mizuki)
+>- 主题仓库：[Mizuki](https://github.com/matsuzaka-yuki/Mizuki)
 >
 >- 代表站点：[Mizuki示例](https://mizuki.mysqil.com/)
 >
