@@ -35,7 +35,7 @@ const { title, items } = Astro.props;
             <img 
               src={item.image} 
               alt={item.title}
-              class="w-full h-full object-cover block transition-transform duration-500 group-hover:scale-110"
+              referrerpolicy="no-referrer" class="w-full h-full object-cover block transition-transform duration-500 group-hover:scale-110"
             />
           </div>
           
@@ -71,7 +71,7 @@ const { title, items } = Astro.props;
       <!-- 图片和内容合并区域 -->
       <div class="modal-image-content-wrapper">
         <!-- 背景图片 -->
-        <img id="modal-image" src="" alt="" class="modal-image" />
+        <img id="modal-image" src="" alt="" class="modal-image" referrerpolicy="no-referrer" />
         
         <!-- 渐变遮罩 - 让下半部分变暗以便显示文字 -->
         <div class="modal-overlay"></div>
