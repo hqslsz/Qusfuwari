@@ -21,10 +21,16 @@ const { title, items } = Astro.props;
   )}
   
   <div class="showcase-grid grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
-    {items.map((item, index) => (
+    {items.map((item) => (
       <div class="showcase-item overflow-hidden rounded-lg shadow-sm hover:shadow-lg transition-all duration-300">
-        <!-- 图片区域 - 完全铺满 -->
-        <div class="showcase-image-wrapper relative overflow-hidden cursor-pointer group bg-gray-100" data-showcase-index={index}>
+        <div
+          class="showcase-image-wrapper relative overflow-hidden cursor-pointer group bg-gray-100"
+          data-sc-title={item.title}
+          data-sc-image={item.image}
+          data-sc-desc={item.description}
+          data-sc-details={item.details || ''}
+          data-sc-link={item.link || ''}
+        >
           <div class="w-full aspect-[4/3]">
             <img 
               src={item.image} 
@@ -33,7 +39,6 @@ const { title, items } = Astro.props;
             />
           </div>
           
-          <!-- 悬停遮罩 - 显示简短描述 -->
           <div class="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-6">
             <p class="text-white text-center text-sm md:text-base leading-relaxed">
               {item.description}
@@ -41,7 +46,6 @@ const { title, items } = Astro.props;
           </div>
         </div>
         
-        <!-- 标题在图片下方 -->
         <div class="bg-[var(--card-bg)] px-4 py-3">
           <h3 class="text-base md:text-lg font-bold text-90 text-center line-clamp-2">
             {item.title}
@@ -393,108 +397,82 @@ const { title, items } = Astro.props;
   }
 </style>
 
-<script define:vars={{ items }}>
-  // 状态管理
-  const state = {
-    modal: null,
-    elements: {}
-  };
-
-  // 获取 DOM 元素（懒加载）
-  function getElements() {
-    if (!state.modal) {
-      state.modal = document.getElementById('showcase-modal');
-      state.elements = {
-        image: document.getElementById('modal-image'),
-        title: document.getElementById('modal-title'),
-        description: document.getElementById('modal-description'),
-        link: document.getElementById('modal-link'),
-        closeBtn: document.getElementById('modal-close'),
-        backdrop: document.getElementById('modal-backdrop')
-      };
-    }
-    return { modal: state.modal, ...state.elements };
+<script>
+  function getShowcaseModal(): HTMLElement | null {
+    // 去重：多个 Showcase 实例会渲染多个相同 ID 的 modal，只保留第一个
+    const modals = document.querySelectorAll<HTMLElement>('[id="showcase-modal"]');
+    let kept: HTMLElement | null = null;
+    modals.forEach((m, i) => {
+      if (i === 0) {
+        kept = m;
+        if (m.parentElement !== document.body) {
+          document.body.appendChild(m);
+        }
+      } else {
+        m.remove();
+      }
+    });
+    return kept;
   }
 
-  // 更新模态窗口内容
-  function updateModalContent(item) {
-    const { image, title, description, link } = getElements();
-    
-    image.src = item.image;
-    image.alt = item.title;
-    title.textContent = item.title;
-    description.textContent = item.details || item.description;
-    
-    // 更新链接按钮显示
-    if (item.link) {
-      link.href = item.link;
-      link.classList.remove('hidden');
-    } else {
-      link.classList.add('hidden');
-    }
-  }
-
-  // 打开模态窗口
-  function openModal(index) {
-    const item = items[index];
-    const { modal } = getElements();
-    
+  function openShowcaseModal(trigger: HTMLElement) {
+    const modal = getShowcaseModal();
     if (!modal) return;
-    
-    // 确保模态窗口在 body 下
-    if (modal.parentElement !== document.body) {
-      document.body.appendChild(modal);
+
+    const { scTitle, scImage, scDesc, scDetails, scLink } = trigger.dataset;
+
+    (modal.querySelector('#modal-image') as HTMLImageElement).src = scImage || '';
+    (modal.querySelector('#modal-image') as HTMLImageElement).alt = scTitle || '';
+    (modal.querySelector('#modal-title') as HTMLElement).textContent = scTitle || '';
+    (modal.querySelector('#modal-description') as HTMLElement).textContent = scDetails || scDesc || '';
+
+    const linkBtn = modal.querySelector('#modal-link') as HTMLAnchorElement;
+    if (scLink) {
+      linkBtn.href = scLink;
+      linkBtn.classList.remove('hidden');
+    } else {
+      linkBtn.classList.add('hidden');
     }
-    
-    updateModalContent(item);
+
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
   }
 
-  // 关闭模态窗口
-  function closeModal() {
-    const { modal } = getElements();
+  function closeShowcaseModal() {
+    const modal = document.getElementById('showcase-modal');
     if (modal) {
       modal.classList.add('hidden');
       document.body.style.overflow = '';
     }
   }
 
-  // 绑定事件
-  function bindEvents() {
-    // 图片点击事件
-    document.querySelectorAll('.showcase-image-wrapper').forEach((wrapper) => {
-      const index = parseInt(wrapper.dataset.showcaseIndex, 10);
-      wrapper.onclick = () => openModal(index);
-    });
-    
-    // 关闭按钮
-    const { closeBtn, backdrop } = getElements();
-    if (closeBtn) closeBtn.onclick = (e) => { e.stopPropagation(); closeModal(); };
-    if (backdrop) backdrop.onclick = closeModal;
-    
-    // ESC 键关闭
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && state.modal && !state.modal.classList.contains('hidden')) {
-        closeModal();
-      }
+  function initShowcase() {
+    const modal = getShowcaseModal();
+    if (!modal) return;
+
+    const closeBtn = modal.querySelector('#modal-close') as HTMLElement;
+    const backdrop = modal.querySelector('#modal-backdrop') as HTMLElement;
+    if (closeBtn) closeBtn.onclick = (e) => { e.stopPropagation(); closeShowcaseModal(); };
+    if (backdrop) backdrop.onclick = closeShowcaseModal;
+
+    document.querySelectorAll<HTMLElement>('.showcase-image-wrapper[data-sc-title]').forEach(trigger => {
+      trigger.onclick = () => openShowcaseModal(trigger);
     });
   }
 
-  // 初始化
-  function init() {
-    getElements();
-    bindEvents();
-  }
+  document.addEventListener('keydown', (e) => {
+    const modal = document.getElementById('showcase-modal');
+    if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+      closeShowcaseModal();
+    }
+  });
 
-  // 页面加载
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', initShowcase);
   } else {
-    init();
+    initShowcase();
   }
 
-  // Astro View Transitions 支持
-  document.addEventListener('astro:page-load', init);
+  document.addEventListener('astro:page-load', initShowcase);
 </script>
 
