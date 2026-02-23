@@ -1,10 +1,10 @@
 ---
 interface ShowcaseItem {
 	title: string;
-	image: string;
-	description: string; // 悬停时显示的简短描述
-	details?: string; // 点击后模态窗口显示的详细描述
-	link?: string; // 可选的外部链接
+	image?: string;
+	description: string;
+	details?: string;
+	link?: string;
 }
 
 interface Props {
@@ -24,19 +24,26 @@ const { title, items } = Astro.props;
     {items.map((item) => (
       <div class="showcase-item overflow-hidden rounded-lg shadow-sm hover:shadow-lg transition-all duration-300">
         <div
-          class="showcase-image-wrapper relative overflow-hidden cursor-pointer group bg-gray-100"
+          class="showcase-image-wrapper relative overflow-hidden cursor-pointer group"
           data-sc-title={item.title}
-          data-sc-image={item.image}
+          data-sc-image={item.image || ''}
           data-sc-desc={item.description}
           data-sc-details={item.details || ''}
           data-sc-link={item.link || ''}
         >
           <div class="w-full aspect-[4/3]">
-            <img 
-              src={item.image} 
-              alt={item.title}
-              referrerpolicy="no-referrer" class="w-full h-full object-cover block transition-transform duration-500 group-hover:scale-110"
-            />
+            {item.image ? (
+              <img 
+                src={item.image} 
+                alt={item.title}
+                referrerpolicy="no-referrer"
+                class="w-full h-full object-cover block transition-transform duration-500 group-hover:scale-110"
+              />
+            ) : (
+              <div class="showcase-placeholder w-full h-full flex items-center justify-center p-4">
+                <span class="showcase-placeholder-title">{item.title}</span>
+              </div>
+            )}
           </div>
           
           <div class="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-6">
@@ -110,6 +117,23 @@ const { title, items } = Astro.props;
     margin: 0;
     padding: 0;
     vertical-align: middle;
+  }
+  
+  .showcase-placeholder {
+    background: linear-gradient(135deg,
+      oklch(0.65 0.15 var(--hue)),
+      oklch(0.55 0.18 var(--hue))
+    );
+  }
+  
+  .showcase-placeholder-title {
+    color: white;
+    font-size: 1.25rem;
+    font-weight: 800;
+    text-align: center;
+    line-height: 1.4;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    word-break: break-word;
   }
   
   /* 模态窗口 - 覆盖整个视口 */
@@ -421,8 +445,19 @@ const { title, items } = Astro.props;
 
     const { scTitle, scImage, scDesc, scDetails, scLink } = trigger.dataset;
 
-    (modal.querySelector('#modal-image') as HTMLImageElement).src = scImage || '';
-    (modal.querySelector('#modal-image') as HTMLImageElement).alt = scTitle || '';
+    const imgEl = modal.querySelector('#modal-image') as HTMLImageElement;
+    const wrapper = modal.querySelector('.modal-image-content-wrapper') as HTMLElement;
+
+    if (scImage) {
+      imgEl.src = scImage;
+      imgEl.alt = scTitle || '';
+      imgEl.style.display = '';
+      wrapper.style.background = '';
+    } else {
+      imgEl.style.display = 'none';
+      wrapper.style.background = 'linear-gradient(135deg, oklch(0.65 0.15 var(--hue)), oklch(0.55 0.18 var(--hue)))';
+    }
+
     (modal.querySelector('#modal-title') as HTMLElement).textContent = scTitle || '';
     (modal.querySelector('#modal-description') as HTMLElement).textContent = scDetails || scDesc || '';
 
