@@ -87,7 +87,7 @@ export const navBarConfig: NavBarConfig = {
 export const profileConfig: ProfileConfig = {
 	avatar: "assets/images/kdl.jpg", // 相对于 /src 目录的路径。如果以 '/' 开头则相对于 /public 目录（已本地化优化）
 	name: "Quasi2317",
-	bio: "这里的造物主，随心所欲沙口一个",
+	bio: "同步发电机 #1 | 进相运行中",
 	links: [
 		{
 			name: "bilibili",
@@ -104,7 +104,7 @@ export const profileConfig: ProfileConfig = {
 		{
 			name: "GitHub",
 			icon: "fa6-brands:github",
-			url: "https://github.com/hqslsz",
+			url: "https://github.com/quasi2317",
 		},
 		{
 			name: "Pixiv",

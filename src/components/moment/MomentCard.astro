@@ -456,7 +456,7 @@ const momentTitle = content.substring(0, 50) + (content.length > 50 ? '...' : ''
     document.body.appendChild(lightbox);
 
     // 获取所有图片项
-    const imageItems = document.querySelectorAll('.moment-images .image-item');
+    const imageItems = document.querySelectorAll<HTMLElement>('.moment-images .image-item');
     
     imageItems.forEach((item) => {
       // 点击事件
