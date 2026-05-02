@@ -74,7 +74,8 @@ const gridLayout = getGridLayout(imageCount);
 const hueOffset = (index * 137.508) % 360; // 黄金角度 ≈ 137.508°
 
 // 生成说说标题（用于 Giscus Discussion 显示）
-const momentTitle = content.substring(0, 50) + (content.length > 50 ? '...' : '');
+const momentTitle =
+	content.substring(0, 50) + (content.length > 50 ? "..." : "");
 ---
 
 <div 

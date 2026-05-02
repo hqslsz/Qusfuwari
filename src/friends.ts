@@ -64,8 +64,3 @@ export const friendCategories: FriendCategory[] = [
 export const getAllFriends = (): Friend[] => {
 	return friendCategories.flatMap((category) => category.friends);
 };
-
-
-
-
-

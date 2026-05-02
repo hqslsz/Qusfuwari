@@ -1,37 +1,40 @@
 ---
 /**
  * LoadingScreen - 页面加载动画组件
- * 
+ *
  * 在页面首次加载时显示加载动画，当页面内容加载完成后自动淡出。
  * 支持配置自定义加载图片或视频，以及提示文字。
  */
-import { siteConfig } from '@/config';
+import { siteConfig } from "@/config";
 
 interface Props {
 	src?: string;
-	type?: 'image' | 'video' | 'auto';
+	type?: "image" | "video" | "auto";
 	text?: string;
 	minDuration?: number;
 }
 
 const config = siteConfig.loadingScreen;
 const {
-	src = config?.src || '',
-	type = config?.type || 'auto',
-	text = config?.text || '加载中...',
-	minDuration = config?.minDuration || 800
+	src = config?.src || "",
+	type = config?.type || "auto",
+	text = config?.text || "加载中...",
+	minDuration = config?.minDuration || 800,
 } = Astro.props;
 
 // 如果加载动画未启用，则不渲染
 const isEnabled = config?.enable ?? false;
 
 // 根据文件扩展名或配置判断资源类型
-function getMediaType(url: string, configType: 'image' | 'video' | 'auto'): 'image' | 'video' {
-	if (configType !== 'auto') return configType;
-	
-	const ext = url.split('.').pop()?.toLowerCase() || '';
-	const videoExts = ['mp4', 'webm', 'ogg', 'mov'];
-	return videoExts.includes(ext) ? 'video' : 'image';
+function getMediaType(
+	url: string,
+	configType: "image" | "video" | "auto",
+): "image" | "video" {
+	if (configType !== "auto") return configType;
+
+	const ext = url.split(".").pop()?.toLowerCase() || "";
+	const videoExts = ["mp4", "webm", "ogg", "mov"];
+	return videoExts.includes(ext) ? "video" : "image";
 }
 
 const mediaType = getMediaType(src, type);

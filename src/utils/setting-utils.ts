@@ -1,5 +1,3 @@
-import { expressiveCodeConfig } from "@/config";
-
 export function getDefaultHue(): number {
 	const fallback = "250";
 	const configCarrier = document.getElementById("config-carrier");

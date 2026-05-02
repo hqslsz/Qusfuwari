@@ -17,16 +17,16 @@ interface Props {
 import { Image } from "astro:assets";
 import { url } from "../../utils/url-utils";
 
-const { 
-	id, 
-	src, 
-	alt, 
-	position = "center", 
+const {
+	id,
+	src,
+	alt,
+	position = "center",
 	basePath = "/",
 	width,
 	height,
 	quality = 80,
-	loading = "lazy"
+	loading = "lazy",
 } = Astro.props;
 const className = Astro.props.class;
 
