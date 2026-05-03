@@ -8,7 +8,7 @@ tags:
 category: 杂
 draft: false
 ---
-![](https://xn--wnu.icu/moedomain/moe.png)
+![](https://morbol.qus.moe/moedomain/moe.png)
 
 馋了moe域名好久了，发现在NameSilo上moe域名一年只需要100CNY，狠狠拿下！
 

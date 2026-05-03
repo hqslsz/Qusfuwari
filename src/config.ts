@@ -59,7 +59,7 @@ export const siteConfig: SiteConfig = {
 	favicon: [
 		// 留空数组以使用默认 favicon
 		{
-			src: "https://xn--wnu.icu/kdla.jpg", // favicon 路径，相对于 /public 目录
+			src: "https://morbol.qus.moe/kdla.jpg", // favicon 路径，相对于 /public 目录
 			theme: "light", // （可选）'light' 或 'dark'，仅在有不同主题的 favicon 时设置
 			sizes: "32x32", // （可选）favicon 尺寸，仅在有不同尺寸的 favicon 时设置
 		},

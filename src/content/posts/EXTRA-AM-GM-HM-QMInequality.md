@@ -23,7 +23,7 @@ $\sqrt{ab}$没有其他的那么显而易见，它是用x趋近于0时候的极�
 
 当且仅当a=b时等号成立。由此我们可以猜得当a≠b时，f(x)单调递增。那不妨令a=2，b=3画图来看看！
 
-![](https://xn--wnu.icu/EXTRA-AM-GM-HM-QMInequality/image.png)![](https://xn--wnu.icu/EXTRA-AM-GM-HM-QMInequality/image%20(1).png)
+![](https://morbol.qus.moe/EXTRA-AM-GM-HM-QMInequality/image.png)![](https://morbol.qus.moe/EXTRA-AM-GM-HM-QMInequality/image%20(1).png)
 
 上文介绍过该图像的**可去间断点f(0)= $\sqrt{ab}$
 
@@ -33,11 +33,11 @@ $\sqrt{ab}$没有其他的那么显而易见，它是用x趋近于0时候的极�
 
 再举一例：
 
-![](https://xn--wnu.icu/EXTRA-AM-GM-HM-QMInequality/image%20(2).png)![](https://xn--wnu.icu/EXTRA-AM-GM-HM-QMInequality/image%20(3).png)
+![](https://morbol.qus.moe/EXTRA-AM-GM-HM-QMInequality/image%20(2).png)![](https://morbol.qus.moe/EXTRA-AM-GM-HM-QMInequality/image%20(3).png)
 
 若a=b时，很显然f(x)恒=a=b，无单调性。上述不等式链全部取等，不妨令a=b=2画图来看一下！
 
-![](https://xn--wnu.icu/EXTRA-AM-GM-HM-QMInequality/image%20(5).png)![](https://xn--wnu.icu/EXTRA-AM-GM-HM-QMInequality/image%20(6).png)
+![](https://morbol.qus.moe/EXTRA-AM-GM-HM-QMInequality/image%20(5).png)![](https://morbol.qus.moe/EXTRA-AM-GM-HM-QMInequality/image%20(6).png)
 延拓到n元，我们也学过下面的不等式链：
 
 $$H_n \le G_n \le A_n \le Q_n$$

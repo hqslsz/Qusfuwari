@@ -14,7 +14,7 @@ draft: false
 
 我们终将在二进制的反复与隐藏之中破解自身的密码。
 
-![](https://xn--wnu.icu/wqt-of-ee/quasi2317.png)
+![](https://morbol.qus.moe/wqt-of-ee/quasi2317.png)
 
 
 【设定说明 / Settings】
