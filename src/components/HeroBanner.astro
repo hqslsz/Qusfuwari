@@ -54,9 +54,15 @@ const asciiLogoMobileRaw: string = asciiLogoMobileFile || asciiLogoRaw;
 <script>
 	/**
 	 * ASCII Art 粒子系统
-	 * 直接读取用户自定义的 ASCII Art 图案，每个非空字符变成一个可交互的粒子
-	 * 字体大小自动适配 banner 尺寸
+	 * ASCII 仅作为形状蒙版，决定粒子位置；显示的字符替换为随机六十四卦
+	 * 鼠标排斥时小概率"重摇一卦"，呼应破碎/占卜的视觉气氛
 	 */
+	const HEXAGRAMS: readonly string[] = Array.from(
+		'䷀䷁䷂䷃䷄䷅䷆䷇䷈䷉䷊䷋䷌䷍䷎䷏䷐䷑䷒䷓䷔䷕䷖䷗䷘䷙䷚䷛䷜䷝䷞䷟䷠䷡䷢䷣䷤䷥䷦䷧䷨䷩䷪䷫䷬䷭䷮䷯䷰䷱䷲䷳䷴䷵䷶䷷䷸䷹䷺䷻䷼䷽䷾䷿'
+	);
+	const randomHex = (): string =>
+		HEXAGRAMS[(Math.random() * HEXAGRAMS.length) | 0];
+
 	class AsciiLogoSystem {
 		private canvas: HTMLCanvasElement | null = null;
 		private ctx: CanvasRenderingContext2D | null = null;
@@ -164,8 +170,8 @@ const asciiLogoMobileRaw: string = asciiLogoMobileFile || asciiLogoRaw;
 			const availW = canvasW - marginX * 2;
 			const availH = canvasH - marginY * 2;
 
-			// 等宽字体的宽高比约为 0.6
-			const charAspect = 0.6;
+			// 卦象字符近似方形（CJK 全角），字符宽高比按 1.0 计算
+			const charAspect = 1.0;
 			// 根据可用空间计算字体大小
 			const fontSizeByWidth = availW / (cols * charAspect);
 			const fontSizeByHeight = availH / rows;
@@ -191,10 +197,11 @@ const asciiLogoMobileRaw: string = asciiLogoMobileFile || asciiLogoRaw;
 					const x = offsetX + col * charW + charW / 2;
 					const y = offsetY + row * charH + charH / 2;
 
-					// 块字符（█ ▄ ▀）作为主体保持高亮；线框字符（═ ║ ╔ ╗ ╚ ╝ etc.）
-					// 略微弱化，形成主次分明、克制的层次感
+					// 原 ASCII 中的"块字符"（█ ▄ ▀）位置作为主体保持高亮；
+					// "线框字符"（═ ║ ╔ ╗ etc.）位置弱化。这样虽然显示的都是
+					// 随机卦象，但 QusMarsh 的轮廓仍能从亮度对比中浮现出来
 					const isHeavy = char === '█' || char === '▄' || char === '▀';
-					const baseAlpha = isHeavy ? 0.92 : 0.7;
+					const baseAlpha = isHeavy ? 0.92 : 0.62;
 					const alpha = baseAlpha + Math.random() * 0.08;
 
 					this.particles.push({
@@ -204,7 +211,7 @@ const asciiLogoMobileRaw: string = asciiLogoMobileFile || asciiLogoRaw;
 						originY: y,
 						vx: 0,
 						vy: 0,
-						char: char,
+						char: randomHex(),
 						fontSize: fontSize,
 						color: `rgba(255, 255, 255, ${alpha})`,
 					});
@@ -255,6 +262,11 @@ const asciiLogoMobileRaw: string = asciiLogoMobileFile || asciiLogoRaw;
 					const angle = Math.atan2(dy, dx);
 					p.vx += Math.cos(angle) * force;
 					p.vy += Math.sin(angle) * force;
+					// 鼠标扰动时小概率"重摇一卦"，越靠近概率越高
+					const proximity = 1 - dist / mouseRadius;
+					if (Math.random() < 0.04 * proximity) {
+						p.char = randomHex();
+					}
 				}
 
 				// 回归原位的弹性力
@@ -270,7 +282,9 @@ const asciiLogoMobileRaw: string = asciiLogoMobileFile || asciiLogoRaw;
 				p.y += p.vy;
 
 				ctx.fillStyle = p.color;
-				ctx.font = `${p.fontSize}px ui-monospace, "Cascadia Code", "JetBrains Mono", "Fira Code", "SF Mono", Menlo, Consolas, "Courier New", monospace`;
+				// 六十四卦在 U+4DC0–U+4DFF（Yijing Hexagrams 区段），
+				// 多数等宽字体不含此区，需要回退到带符号 / CJK 的字体
+				ctx.font = `${p.fontSize}px ui-monospace, "Cascadia Code", "JetBrains Mono", "SF Mono", Menlo, Consolas, "Segoe UI Symbol", "Apple Symbols", "Noto Sans Symbols 2", "PingFang SC", "Microsoft YaHei", monospace`;
 				ctx.textAlign = 'center';
 				ctx.textBaseline = 'middle';
 				ctx.fillText(p.char, p.x, p.y);
