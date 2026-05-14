@@ -41,7 +41,7 @@
     "astro-icon": "^1.1.5",
     "hastscript": "^9.0.1",
     "katex": "^0.16.38",
-    "lucide-react": "^0.562.0",
+    "lucide-react": "^0.577.0",
     "markdown-it": "^14.1.1",
     "mdast-util-to-string": "^4.0.0",
     "overlayscrollbars": "^2.13.0",
